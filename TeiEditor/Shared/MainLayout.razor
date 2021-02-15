@@ -1,0 +1,42 @@
+﻿@inherits LayoutComponentBase
+
+<div class="page">
+    @*<div class="sidebar">
+            <NavMenu />
+        </div>*@
+
+    <div class="main">
+        <div class="top-row px-4">
+            <div style="margin:5px 10px 5px 10px;">
+                Theme:
+                <select @onchange="ChangeTheme">
+                    <option value="vs">Visual Studio</option>
+                    <option value="vs-dark">Visual Studio Dark</option>
+                    <option value="hc-black">High Contrast Black</option>
+                </select>
+            </div>
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span aria-hidden="true"></span> Code Editor
+            </NavLink>
+            <NavLink class="nav-link disabled" href="NewPage" Match="NavLinkMatch.All">
+                <span aria-hidden="true"></span> More
+            </NavLink>
+
+            <a href="#" target="_blank" class="ml-md-auto">About</a>
+
+        </div>
+
+        <div class="content px-4">
+            @Body
+        </div>
+    </div>
+</div>
+
+@code {
+    private async Task ChangeTheme(ChangeEventArgs e)
+    {
+        Console.WriteLine($"setting theme to: {e.Value.ToString()}");
+        await MonacoEditorBase.SetTheme(e.Value.ToString());
+    }
+
+}
