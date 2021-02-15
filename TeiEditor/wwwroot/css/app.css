@@ -49,7 +49,7 @@ a, .btn-link {
         top: 0.5rem;
     }
 .monaco-editor-container {
-    height: 630px;
+    height: 600px;
     border: 1px solid gray;
 }
 
@@ -60,3 +60,31 @@ a, .btn-link {
 .decorationContentClass {
     background: lightblue;
 }
+
+.file-input-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: lightblue;
+    color: white;
+    cursor: pointer;
+    position: relative;
+    width: 120px;
+    height: 30px;
+    border-width:2px;
+    border-style:solid;
+    border-color:blue;
+    border-radius:3px;
+}
+
+    .file-input-zone:hover {
+        background-color: blue;
+    }
+
+    .file-input-zone input[type=file] {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
