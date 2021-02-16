@@ -12,9 +12,9 @@
                 </div>
         </div>*@
 <div class="container-fluid">
-    <div class="row w-100" style="margin-bottom:5px">
+    <div class="row w-100">
         <div class="col">
-            <div class="row">
+            <div class="row" style="margin-bottom:5px">
                 <div class="col-3 file-input-zone">
                     <InputFile OnChange="@OnSourceFileChange" class="custom-file-input" />
                     @lblChooseSource
@@ -22,13 +22,13 @@
                 <div class="col-8" style="padding-top:3px!important">@lblInput</div>
             </div>
             <div class="row">
-                <div class="col">
+                <div class="col" style="padding-left:0!important">
                     <MonacoEditor @ref="_editorSource" Id="editor-source" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitSource" OnContextMenu="OnContextMenuSource" />
                 </div>
             </div>
         </div>
         <div class="col">
-            <div class="row">
+            <div class="row" style="margin-bottom:5px">
                 <div class="col-3 file-input-zone">
                     <InputFile OnChange="@OnTargetFileChange" />
                     @lblChooseTarget
@@ -36,7 +36,7 @@
                 <div class="col-8" style="padding-top:3px!important">@lblInput2</div>
             </div>
             <div class="row">
-                <div class="col">
+                <div class="col" style="padding-left:0!important">
                     <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitTarget" OnContextMenu="OnContextMenuTarget" />
                 </div>
             </div>
@@ -91,14 +91,14 @@
 
     private async Task EditorOnDidInitSource(MonacoEditorBase editor)
     {
-        lSourceLines = await LoadXMLfromFile(_editorSource, "data/AsherBT20210210.xml");
+        //lSourceLines = await LoadXMLfromFile(_editorSource, "data/AsherBT20210210.xml");
 
         decorationIdsSource = await DisplayDecoration(_editorSource, 4);
         // You can now use 'decorationIds' to change or remove the decorations
     }
     private async Task EditorOnDidInitTarget(MonacoEditorBase editor)
     {
-        lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
+        //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
 
         decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
         // You can now use 'decorationIds' to change or remove the decorations
@@ -118,7 +118,7 @@
                     GlyphMarginClassName = "decorationGlyphMarginClass"
                 }
             }
-                                };
+                                    };
         return await editor.DeltaDecorations(null, newDecorations);
     }
 
