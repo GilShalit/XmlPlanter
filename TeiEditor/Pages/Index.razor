@@ -1,8 +1,11 @@
 ﻿@page "/"
+
+@using System.IO
 @using System.Net.Http
 @using System.Text
 @using System.Xml;
 @inject HttpClient _client
+@inject IJSRuntime js
 @*<div>
     <div style="margin:10px 0;">
                     New Value: <input type="text" @bind="ValueToSet" style="width: 400px;" /> <button @onclick="SetValue">Set Value</button>
@@ -19,10 +22,10 @@
                     <InputFile OnChange="@OnSourceFileChange" class="custom-file-input" />
                     @lblChooseSource
                 </div>
-                <div class="col-8" style="padding-top:3px!important">@lblInput</div>
+                <div class="col-8" style="padding-top:3px!important">@lblSource</div>
             </div>
             <div class="row">
-                <div class="col" style="padding-left:0!important">
+                <div class="col" style="padding-left:0!important;">
                     <MonacoEditor @ref="_editorSource" Id="editor-source" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitSource" OnContextMenu="OnContextMenuSource" />
                 </div>
             </div>
@@ -33,10 +36,10 @@
                     <InputFile OnChange="@OnTargetFileChange" />
                     @lblChooseTarget
                 </div>
-                <div class="col-8" style="padding-top:3px!important">@lblInput2</div>
+                <div class="col-8" style="padding-top:3px!important">@lblTarget</div>
             </div>
             <div class="row">
-                <div class="col" style="padding-left:0!important">
+                <div class="col" style="padding-right:0!important">
                     <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitTarget" OnContextMenu="OnContextMenuTarget" />
                 </div>
             </div>
@@ -51,34 +54,33 @@
     private string ValueToSet { get; set; }
     private string[] decorationIdsSource;
     private string[] decorationIdsTarget;
-    private string lblInput = "";
+    private string lblSource = "";
     private string lblChooseSource = "Choose Source";
-    private string lblInput2 = "";
+    private string lblTarget = "";
     private string lblChooseTarget = "Choose Target";
 
     private async Task OnSourceFileChange(InputFileChangeEventArgs e)
     {
-        var maxAllowedFiles = 3;
-        var format = "image/png";
-
-        lblInput = e.File.Name;
+        lblSource = e.File.Name;
         lblChooseSource = "Source: ";
-        foreach (var imageFile in e.GetMultipleFiles(maxAllowedFiles))
+
+        if (e.File.Size > 512000)
         {
-            var resizedImageFile = await imageFile.RequestImageFileAsync(format,
-                100, 100);
-            var buffer = new byte[resizedImageFile.Size];
-            await resizedImageFile.OpenReadStream().ReadAsync(buffer);
-            var imageDataUrl =
-                $"data:{format};base64,{Convert.ToBase64String(buffer)}";
-            //imageDataUrls.Add(imageDataUrl);
+            lblSource = $"{lblSource} is larger the 500kb!";
         }
+        lSourceLines = await LoadXMLfromFile(_editorSource, e.File);
     }
 
     private async Task OnTargetFileChange(InputFileChangeEventArgs e)
     {
-        lblInput2 = e.File.Name;
+        lblTarget = e.File.Name;
         lblChooseTarget = "Target: ";
+
+        if (e.File.Size > 512000)
+        {
+            lblTarget = $"{lblTarget} is larger the 500kb!";
+        }
+        lTargetLines = await LoadXMLfromFile(_editorTarget, e.File);
     }
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
     {
@@ -91,8 +93,8 @@
 
     private async Task EditorOnDidInitSource(MonacoEditorBase editor)
     {
-        //lSourceLines = await LoadXMLfromFile(_editorSource, "data/AsherBT20210210.xml");
 
+        var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
         decorationIdsSource = await DisplayDecoration(_editorSource, 4);
         // You can now use 'decorationIds' to change or remove the decorations
     }
@@ -100,6 +102,7 @@
     {
         //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
 
+        var i = await js.InvokeAsync<string>("resizeEditors", "editor-target");
         decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
         // You can now use 'decorationIds' to change or remove the decorations
     }
@@ -118,13 +121,17 @@
                     GlyphMarginClassName = "decorationGlyphMarginClass"
                 }
             }
-                                    };
+                                                        };
         return await editor.DeltaDecorations(null, newDecorations);
     }
 
-    private async Task<List<string>> LoadXMLfromFile(MonacoEditor editor, string filePath)
+    private async Task<List<string>> LoadXMLfromFile(MonacoEditor editor, IBrowserFile file)
     {
-        var bytesOfXML = await _client.GetByteArrayAsync(filePath);
+        byte[] bytesOfXML = new byte[file.Size];
+        using (Stream strm = file.OpenReadStream())
+        {
+            await strm.ReadAsync(bytesOfXML);
+        }
         string stringOfXML = Encoding.UTF8.GetString(bytesOfXML);
         TextModel model = await MonacoEditorBase.CreateModel(stringOfXML, "xml");
         await editor.SetModel(model);
