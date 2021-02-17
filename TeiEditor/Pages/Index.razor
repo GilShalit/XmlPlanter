@@ -36,7 +36,8 @@
                     <InputFile OnChange="@OnTargetFileChange"  accept=".xml"/>
                     @lblChooseTarget
                 </div>
-                <div class="col-8" style="padding-top:3px!important">@lblTarget</div>
+                <div class="col-6" style="padding-top:3px!important">@lblTarget</div>
+                <div class="col-2"><button @onclick="Download">Download</button></div>
             </div>
             <div class="row">
                 <div class="col" style="padding-right:0!important">
@@ -58,6 +59,12 @@
     private string lblChooseSource = "Choose Source";
     private string lblTarget = "";
     private string lblChooseTarget = "Choose Target";
+
+    private async Task Download()
+    {
+        byte[]file= System.Text.Encoding.UTF8.GetBytes(await _editorTarget.GetValue());
+        await js.InvokeVoidAsync("BlazorDownloadFile", lblTarget, "text/xml", file);
+    }
 
     private async Task OnSourceFileChange(InputFileChangeEventArgs e)
     {
