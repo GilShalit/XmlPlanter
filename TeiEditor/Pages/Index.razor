@@ -19,7 +19,7 @@
         <div class="col">
             <div class="row" style="margin-bottom:5px">
                 <div class="col-3 file-input-zone">
-                    <InputFile OnChange="@OnSourceFileChange" class="custom-file-input" />
+                    <InputFile OnChange="@OnSourceFileChange"  accept=".xml"/>
                     @lblChooseSource
                 </div>
                 <div class="col-8" style="padding-top:3px!important">@lblSource</div>
@@ -33,7 +33,7 @@
         <div class="col">
             <div class="row" style="margin-bottom:5px">
                 <div class="col-3 file-input-zone">
-                    <InputFile OnChange="@OnTargetFileChange" />
+                    <InputFile OnChange="@OnTargetFileChange"  accept=".xml"/>
                     @lblChooseTarget
                 </div>
                 <div class="col-8" style="padding-top:3px!important">@lblTarget</div>
