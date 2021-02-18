@@ -4,7 +4,6 @@
 @using System.Net.Http
 @using System.Text
 @using System.Xml;
-@inject HttpClient _client
 @inject IJSRuntime js
 @*<div>
     <div style="margin:10px 0;">
@@ -19,7 +18,7 @@
         <div class="col">
             <div class="row" style="margin-bottom:5px">
                 <div class="col-3 file-input-zone">
-                    <InputFile OnChange="@OnSourceFileChange"  accept=".xml"/>
+                    <InputFile OnChange="@OnSourceFileChange" accept=".xml" />
                     @lblChooseSource
                 </div>
                 <div class="col-8" style="padding-top:3px!important">@lblSource</div>
@@ -33,14 +32,14 @@
         <div class="col">
             <div class="row" style="margin-bottom:5px">
                 <div class="col-3 file-input-zone">
-                    <InputFile OnChange="@OnTargetFileChange"  accept=".xml"/>
+                    <InputFile OnChange="@OnTargetFileChange" accept=".xml" />
                     @lblChooseTarget
                 </div>
-                <div class="col-6" style="padding-top:3px!important">@lblTarget</div>
+                <div class="col-5" style="padding-top:3px!important">@lblTarget</div>
                 <div class="col-2"><button @onclick="Download">Download</button></div>
             </div>
             <div class="row">
-                <div class="col" style="padding-right:0!important">
+                <div class="col" style="padding-left: 0 !important">
                     <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitTarget" OnContextMenu="OnContextMenuTarget" />
                 </div>
             </div>
@@ -48,76 +47,89 @@
     </div>
 </div>
 @code {
-    private MonacoEditor _editorSource { get; set; }
-    private MonacoEditor _editorTarget { get; set; }
-    private List<string> lSourceLines = new List<string>();
-    private List<string> lTargetLines = new List<string>();
-    private string ValueToSet { get; set; }
-    private string[] decorationIdsSource;
-    private string[] decorationIdsTarget;
-    private string lblSource = "";
-    private string lblChooseSource = "Choose Source";
-    private string lblTarget = "";
-    private string lblChooseTarget = "Choose Target";
+private MonacoEditor _editorSource { get; set; }
+private MonacoEditor _editorTarget { get; set; }
+private List<string> lSourceLines = new List<string>();
+private List<string> lTargetLines = new List<string>();
+private string ValueToSet { get; set; }
+private string[] decorationIdsSource;
+private string[] decorationIdsTarget;
+private string lblSource = "";
+private string lblChooseSource = "Choose Source";
+private string lblTarget = "";
+private string lblChooseTarget = "Choose Target";
 
-    private async Task Download()
+private async Task Download()
+{
+    if (await js.InvokeAsync<int>("isChrome") > -1)
     {
-        byte[]file= System.Text.Encoding.UTF8.GetBytes(await _editorTarget.GetValue());
-        await js.InvokeVoidAsync("BlazorDownloadFile", lblTarget, "text/xml", file);
+        var w1 = await js.InvokeAsync<string>("getWidth", "editor-source");
+        var w2 = await js.InvokeAsync<string>("getWidth", "editor-target");
+        var h1 = await js.InvokeAsync<string>("getHeight", "editor-source");
+        var h2 = await js.InvokeAsync<string>("getHeight", "editor-target");
+
+        await js.InvokeVoidAsync("setSize", "editor-source", w1, h1);
+        await js.InvokeVoidAsync("setSize", "editor-target", w2, h2);
     }
 
-    private async Task OnSourceFileChange(InputFileChangeEventArgs e)
-    {
-        lblSource = e.File.Name;
-        lblChooseSource = "Source: ";
+    byte[] file = System.Text.Encoding.UTF8.GetBytes(await _editorTarget.GetValue());
+    await js.InvokeVoidAsync("BlazorDownloadFile", lblTarget, "text/xml", file);
 
-        if (e.File.Size > 512000)
-        {
-            lblSource = $"{lblSource} is larger the 500kb!";
-        }
-        lSourceLines = await LoadXMLfromFile(_editorSource, e.File);
+
+}
+
+private async Task OnSourceFileChange(InputFileChangeEventArgs e)
+{
+    lblSource = e.File.Name;
+    lblChooseSource = "Source: ";
+
+    if (e.File.Size > 512000)
+    {
+        lblSource = $"{lblSource} is larger the 500kb!";
     }
+    lSourceLines = await LoadXMLfromFile(_editorSource, e.File);
+}
 
-    private async Task OnTargetFileChange(InputFileChangeEventArgs e)
+private async Task OnTargetFileChange(InputFileChangeEventArgs e)
+{
+    lblTarget = e.File.Name;
+    lblChooseTarget = "Target: ";
+
+    if (e.File.Size > 512000)
     {
-        lblTarget = e.File.Name;
-        lblChooseTarget = "Target: ";
-
-        if (e.File.Size > 512000)
-        {
-            lblTarget = $"{lblTarget} is larger the 500kb!";
-        }
-        lTargetLines = await LoadXMLfromFile(_editorTarget, e.File);
+        lblTarget = $"{lblTarget} is larger the 500kb!";
     }
-    private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
+    lTargetLines = await LoadXMLfromFile(_editorTarget, e.File);
+}
+private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
+{
+    return new StandaloneEditorConstructionOptions
     {
-        return new StandaloneEditorConstructionOptions
-        {
-            GlyphMargin = true,
-            AutomaticLayout = true
-        };
-    }
+        GlyphMargin = true,
+        AutomaticLayout = true
+    };
+}
 
-    private async Task EditorOnDidInitSource(MonacoEditorBase editor)
+private async Task EditorOnDidInitSource(MonacoEditorBase editor)
+{
+    await js.InvokeVoidAsync("registerResize");
+    var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
+    decorationIdsSource = await DisplayDecoration(_editorSource, 4);
+    // You can now use 'decorationIds' to change or remove the decorations
+}
+private async Task EditorOnDidInitTarget(MonacoEditorBase editor)
+{
+    //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
+
+    var i = await js.InvokeAsync<string>("resizeEditors", "editor-target");
+    decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
+    // You can now use 'decorationIds' to change or remove the decorations
+}
+
+private async Task<string[]> DisplayDecoration(MonacoEditor editor, int iRow)
+{
+    var newDecorations = new ModelDeltaDecoration[]
     {
-
-        var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
-        decorationIdsSource = await DisplayDecoration(_editorSource, 4);
-        // You can now use 'decorationIds' to change or remove the decorations
-    }
-    private async Task EditorOnDidInitTarget(MonacoEditorBase editor)
-    {
-        //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
-
-        var i = await js.InvokeAsync<string>("resizeEditors", "editor-target");
-        decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
-        // You can now use 'decorationIds' to change or remove the decorations
-    }
-
-    private async Task<string[]> DisplayDecoration(MonacoEditor editor, int iRow)
-    {
-        var newDecorations = new ModelDeltaDecoration[]
-        {
             new ModelDeltaDecoration
             {
                 Range = new BlazorMonaco.Bridge.Range(iRow,1,iRow,3),
@@ -128,59 +140,59 @@
                     GlyphMarginClassName = "decorationGlyphMarginClass"
                 }
             }
-                                                        };
-        return await editor.DeltaDecorations(null, newDecorations);
-    }
+                                                                            };
+    return await editor.DeltaDecorations(null, newDecorations);
+}
 
-    private async Task<List<string>> LoadXMLfromFile(MonacoEditor editor, IBrowserFile file)
+private async Task<List<string>> LoadXMLfromFile(MonacoEditor editor, IBrowserFile file)
+{
+    byte[] bytesOfXML = new byte[file.Size];
+    using (Stream strm = file.OpenReadStream())
     {
-        byte[] bytesOfXML = new byte[file.Size];
-        using (Stream strm = file.OpenReadStream())
-        {
-            await strm.ReadAsync(bytesOfXML);
-        }
-        string stringOfXML = Encoding.UTF8.GetString(bytesOfXML);
-        TextModel model = await MonacoEditorBase.CreateModel(stringOfXML, "xml");
-        await editor.SetModel(model);
-
-        List<string> lLines = stringOfXML.Split("\n").ToList<string>();
-        return lLines;
+        await strm.ReadAsync(bytesOfXML);
     }
+    string stringOfXML = Encoding.UTF8.GetString(bytesOfXML);
+    TextModel model = await MonacoEditorBase.CreateModel(stringOfXML, "xml");
+    await editor.SetModel(model);
 
-    private void OnContextMenuSource(EditorMouseEvent eventArg)
+    List<string> lLines = stringOfXML.Split("\n").ToList<string>();
+    return lLines;
+}
+
+private void OnContextMenuSource(EditorMouseEvent eventArg)
+{
+    Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
+}
+private void OnContextMenuTarget(EditorMouseEvent eventArg)
+{
+    Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
+}
+
+private async Task SetValue()
+{
+    Console.WriteLine($"setting value to: {ValueToSet}");
+    await _editorSource.SetValue(ValueToSet);
+}
+
+private async Task GetValue()
+{
+    var val = await _editorSource.GetValue();
+    Console.WriteLine($"value is: {val}");
+}
+
+private async Task AddCommand()
+{//https://github.com/microsoft/monaco-editor/issues/1901#issuecomment-609018281
+    await _editorSource.AddCommand((int)KeyMode.CtrlCmd | (int)KeyCode.Enter, (editor, keyCode) =>
     {
-        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
-    }
-    private void OnContextMenuTarget(EditorMouseEvent eventArg)
+        Console.WriteLine("Ctrl+Enter : Editor command is triggered.");
+    });
+}
+
+private async Task AddAction()
+{//https://stackoverflow.com/questions/64057359/difference-between-editor-addaction-and-editor-addcommand-and-their-use-case
+    await _editorSource.AddAction("testAction", "Test Action", new int[] { (int)KeyMode.CtrlCmd | (int)KeyCode.KEY_D, (int)KeyMode.CtrlCmd | (int)KeyCode.KEY_B }, null, null, "navigation", 1.5, (editor, keyCodes) =>
     {
-        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
-    }
-
-    private async Task SetValue()
-    {
-        Console.WriteLine($"setting value to: {ValueToSet}");
-        await _editorSource.SetValue(ValueToSet);
-    }
-
-    private async Task GetValue()
-    {
-        var val = await _editorSource.GetValue();
-        Console.WriteLine($"value is: {val}");
-    }
-
-    private async Task AddCommand()
-    {//https://github.com/microsoft/monaco-editor/issues/1901#issuecomment-609018281
-        await _editorSource.AddCommand((int)KeyMode.CtrlCmd | (int)KeyCode.Enter, (editor, keyCode) =>
-        {
-            Console.WriteLine("Ctrl+Enter : Editor command is triggered.");
-        });
-    }
-
-    private async Task AddAction()
-    {//https://stackoverflow.com/questions/64057359/difference-between-editor-addaction-and-editor-addcommand-and-their-use-case
-        await _editorSource.AddAction("testAction", "Test Action", new int[] { (int)KeyMode.CtrlCmd | (int)KeyCode.KEY_D, (int)KeyMode.CtrlCmd | (int)KeyCode.KEY_B }, null, null, "navigation", 1.5, (editor, keyCodes) =>
-        {
-            Console.WriteLine("Ctrl+D : Editor action is triggered.");
-        });
-    }
+        Console.WriteLine("Ctrl+D : Editor action is triggered.");
+    });
+}
 }

@@ -1,15 +1,39 @@
-﻿window.WindowInerrHeight = function () {
-    return window.innerHeight;
+﻿window.isChrome = function () {
+    const ua = navigator.userAgent;
+    return ua.indexOf('Chrome') 
 }
-window.WindowInnerWidth = function () {
-    return window.innerWidth;
-}
+
 window.resizeEditors = function (id) {
     let wh = window.innerHeight;
     var sourceE = document.getElementById(id);
     var height = `${window.innerHeight - 150}px`;
     sourceE.style.height = height;
-    return height
+    //sourceE.style.width = sourceE.querySelector('.monaco-editor').style.width + 2;
+}
+
+window.getWidth = function (id) {
+    var el = document.getElementById(id);
+    var sWidth = el.querySelector('.monaco-editor').style.width;
+    var iWidth = parseInt(sWidth.substring(0, sWidth.length - 2));
+    return (iWidth + 2) + 'px';
+}
+window.getHeight = function (id) {
+    var el = document.getElementById(id);
+    var sHeight = el.querySelector('.monaco-editor').style.height;
+    var iHeight = parseInt(sHeight.substring(0, sHeight.length - 2));
+    return (iHeight + 2 - 57) + 'px';
+}
+
+window.setSize = function(id, width,height) {
+    document.getElementById(id).style.width = width;
+    document.getElementById(id).style.height = height;
+}
+window.registerResize = function () {
+    window.onresize = function () {
+        //alert('Inside handler for resize event');
+        resizeEditors('editor-source');
+        resizeEditors('editor-target');
+    }
 }
 
 //https://www.meziantou.net/generating-and-downloading-a-file-in-a-blazor-webassembly-application.htm
