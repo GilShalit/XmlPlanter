@@ -132,7 +132,7 @@ private async Task<string[]> DisplayDecoration(MonacoEditor editor, int iRow)
     {
             new ModelDeltaDecoration
             {
-                Range = new BlazorMonaco.Bridge.Range(iRow,1,iRow,3),
+                Range = new BlazorMonaco.Range(iRow,1,iRow,3),
                 Options = new ModelDecorationOptions
                 {
                     IsWholeLine = true,
