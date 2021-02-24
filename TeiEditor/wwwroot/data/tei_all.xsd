@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.tei-c.org/ns/1.0" xmlns:teix="http://www.tei-c.org/ns/Examples" xmlns:tei="http://www.tei-c.org/ns/1.0">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.tei-c.org/ns/1.0" xmlns:dcr="http://www.isocat.org/ns/dcr" xmlns:teix="http://www.tei-c.org/ns/Examples" xmlns:tei="http://www.tei-c.org/ns/1.0">
+  <xs:import namespace="http://www.isocat.org/ns/dcr" schemaLocation="tei_all_dcr.xsd"/>
   <xs:import namespace="http://www.tei-c.org/ns/Examples" schemaLocation="tei_all_teix.xsd"/>
   <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="tei_all_xml.xsd"/>
   <!--
@@ -519,6 +520,16 @@ Sample values include: 1] rubbing; 2] mildew; 3] smoke</xs:documentation>
         <xs:documentation>supplies a pointer to some location defining a named period of time within which the datable item is understood to have occurred.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="att.datcat.attributes">
+    <xs:attributeGroup ref="tei:att.datcat.attribute.datcat"/>
+    <xs:attributeGroup ref="tei:att.datcat.attribute.valueDatcat"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="att.datcat.attribute.datcat">
+    <xs:attribute ref="dcr:datcat"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="att.datcat.attribute.valueDatcat">
+    <xs:attribute ref="dcr:valueDatcat"/>
   </xs:attributeGroup>
   <xs:attributeGroup name="att.declarable.attributes">
     <xs:attributeGroup ref="tei:att.declarable.attribute.default"/>
@@ -1705,6 +1716,7 @@ Suggested values include: 1] below; 2] bottom; 3] margin; 4] top; 5] opposite; 6
   </xs:attributeGroup>
   <xs:attributeGroup name="att.segLike.attributes">
     <xs:attributeGroup ref="tei:att.metrical.attributes"/>
+    <xs:attributeGroup ref="tei:att.datcat.attributes"/>
     <xs:attributeGroup ref="tei:att.fragmentable.attributes"/>
     <xs:attributeGroup ref="tei:att.segLike.attribute.function"/>
   </xs:attributeGroup>
@@ -7518,6 +7530,7 @@ Suggested values include: 1] main; 2] hom (homograph); 3] xref (cross reference)
     </xs:attribute>
   </xs:attributeGroup>
   <xs:attributeGroup name="att.lexicographic.attributes">
+    <xs:attributeGroup ref="tei:att.datcat.attributes"/>
     <xs:attributeGroup ref="tei:att.lexicographic.normalized.attributes"/>
     <xs:attributeGroup ref="tei:att.lexicographic.attribute.expand"/>
     <xs:attributeGroup ref="tei:att.lexicographic.attribute.split"/>
@@ -12610,6 +12623,7 @@ Feature Value]</xs:documentation>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="tei:f"/>
       </xs:sequence>
       <xs:attributeGroup ref="tei:att.global.attributes"/>
+      <xs:attributeGroup ref="tei:att.datcat.attributes"/>
       <xs:attribute name="type">
         <xs:annotation>
           <xs:documentation>specifies the type of the feature structure.</xs:documentation>
@@ -12643,6 +12657,7 @@ Feature Value]</xs:documentation>
     <xs:complexType mixed="true">
       <xs:group minOccurs="0" ref="tei:model.featureVal"/>
       <xs:attributeGroup ref="tei:att.global.attributes"/>
+      <xs:attributeGroup ref="tei:att.datcat.attributes"/>
       <xs:attribute name="name" use="required" type="xs:Name">
         <xs:annotation>
           <xs:documentation>a single word which follows the rules defining a legal XML name (see ), providing a name for the feature.</xs:documentation>
@@ -12662,6 +12677,7 @@ Feature Value]</xs:documentation>
     </xs:annotation>
     <xs:complexType>
       <xs:attributeGroup ref="tei:att.global.attributes"/>
+      <xs:attributeGroup ref="tei:att.datcat.attributes"/>
       <xs:attribute name="value" use="required" type="xs:boolean">
         <xs:annotation>
           <xs:documentation>supplies a binary value.</xs:documentation>
@@ -12675,6 +12691,7 @@ Feature Value]</xs:documentation>
     </xs:annotation>
     <xs:complexType>
       <xs:attributeGroup ref="tei:att.global.attributes"/>
+      <xs:attributeGroup ref="tei:att.datcat.attributes"/>
       <xs:attribute name="value" use="required">
         <xs:annotation>
           <xs:documentation>supplies a symbolic value for the feature, one of a finite list that may be specified in a feature declaration.</xs:documentation>
@@ -12693,6 +12710,7 @@ Feature Value]</xs:documentation>
     </xs:annotation>
     <xs:complexType>
       <xs:attributeGroup ref="tei:att.global.attributes"/>
+      <xs:attributeGroup ref="tei:att.datcat.attributes"/>
       <xs:attribute name="value" use="required">
         <xs:simpleType>
           <xs:union memberTypes="xs:double xs:decimal">
@@ -12733,6 +12751,7 @@ Feature Value]</xs:documentation>
       <xs:complexContent>
         <xs:extension base="tei:macro.xtext">
           <xs:attributeGroup ref="tei:att.global.attributes"/>
+          <xs:attributeGroup ref="tei:att.datcat.attributes"/>
         </xs:extension>
       </xs:complexContent>
     </xs:complexType>

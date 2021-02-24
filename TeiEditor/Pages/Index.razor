@@ -62,7 +62,17 @@
     private string lblChooseSource = "Choose Source";
     private string lblTarget = "";
     private string lblChooseTarget = "Choose Target";
+    private XmlSchemaSet schemaSet = new XmlSchemaSet();
+    ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
 
+    private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
+    {
+        return new StandaloneEditorConstructionOptions
+        {
+            GlyphMargin = true,
+            AutomaticLayout = true
+        };
+    }
     private async Task Download()
     {
         if (await js.InvokeAsync<int>("isChrome") > -1)
@@ -105,14 +115,6 @@
         }
         lTargetLines = await LoadXMLfromFile(_editorTarget, e.File);
     }
-    private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
-    {
-        return new StandaloneEditorConstructionOptions
-        {
-            GlyphMargin = true,
-            AutomaticLayout = true
-        };
-    }
 
     private async Task EditorOnDidInitSource(MonacoEditorBase editor)
     {
@@ -120,6 +122,12 @@
         var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
         decorationIdsSource = await DisplayDecoration(_editorSource, 4);
         // You can now use 'decorationIds' to change or remove the decorations
+
+        //load schemaSet for validation
+        await loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0");
+        await loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr");
+        await loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples");
+        await loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace");
     }
     private async Task EditorOnDidInitTarget(MonacoEditorBase editor)
     {
@@ -144,7 +152,7 @@
                     GlyphMarginClassName = "decorationGlyphMarginClass"
                 }
             }
-                                                                                                    };
+                                                                                                            };
         return await editor.DeltaDecorations(null, newDecorations);
     }
 
@@ -203,27 +211,44 @@
     private async Task ValidateXML()
     {
 
-        XmlReaderSettings settings = new XmlReaderSettings();
         try
         {
-            byte[] byteArray = await _client.GetByteArrayAsync("data/tei_all.xsd");
-            MemoryStream stream = new MemoryStream(byteArray);
-            XmlReader xmlSchemaReader = XmlReader.Create(stream);
-            settings.ValidationType = ValidationType.Schema;
-            settings.ValidationFlags = XmlSchemaValidationFlags.None;
-            settings.Schemas.Add(null, xmlSchemaReader);
-
             byte[] byteArrayX = Encoding.ASCII.GetBytes(await _editorTarget.GetValue());
             MemoryStream streamX = new MemoryStream(byteArrayX);
-            XmlReader reader = XmlReader.Create(streamX, settings);
+            XmlReader reader = XmlReader.Create(streamX);
+
             XmlDocument document = new XmlDocument();
             document.Load(reader);
+            document.Schemas = schemaSet;
+            document.Validate(eventHandler);
         }
         catch (Exception err)
         {
             string msg = err.Message;
-            throw;
+            //throw;
         }
 
     }
+
+    static void ValidationEventHandler(object sender, ValidationEventArgs e)
+    {
+        switch (e.Severity)
+        {
+            case XmlSeverityType.Error:
+                Console.WriteLine("Error: {0}", e.Message);
+                break;
+            case XmlSeverityType.Warning:
+                Console.WriteLine("Warning {0}", e.Message);
+                break;
+        }
+    }
+
+    private async Task loadSchema(string path, string nameSpace)
+    {
+        byte[] byteArrayS = await _client.GetByteArrayAsync(path);
+        MemoryStream streamS = new MemoryStream(byteArrayS);
+        XmlReader xmlSchemaReader = XmlReader.Create(streamS);
+        schemaSet.Add(nameSpace, xmlSchemaReader);
+    }
+
 }
