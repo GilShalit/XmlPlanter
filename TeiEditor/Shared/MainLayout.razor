@@ -7,6 +7,12 @@
 
     <div class="main">
         <div class="top-row px-4" id="navTop">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span aria-hidden="true"></span> Code Editor
+            </NavLink>
+            <NavLink class="nav-link disabled" href="NewPage" Match="NavLinkMatch.All">
+                <span aria-hidden="true"></span> More
+            </NavLink>
             <div style="margin:5px 10px 5px 10px;">
                 Theme:
                 <select @onchange="ChangeTheme">
@@ -15,13 +21,6 @@
                     <option value="hc-black">High Contrast Black</option>
                 </select>
             </div>
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span aria-hidden="true"></span> Code Editor
-            </NavLink>
-            <NavLink class="nav-link disabled" href="NewPage" Match="NavLinkMatch.All">
-                <span aria-hidden="true"></span> More
-            </NavLink>
-
             <a href="#" target="_blank" class="ml-md-auto">About</a>
 
         </div>
