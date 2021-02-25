@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
+@inject AppState AppState
 
 <div class="page">
     @*<div class="sidebar">
@@ -7,7 +9,8 @@
 
     <div class="main">
         <div class="top-row px-4" id="navTop">
-            <img src="images/working.gif" class="workingGif"/>
+
+            <img id="gifWorking" src="images/working.gif" class="workingGif @AppState.hiddenClass" />
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span aria-hidden="true"></span> Code Editor
             </NavLink>
@@ -23,7 +26,6 @@
                 </select>
             </div>
             <a href="#" target="_blank" class="ml-md-auto">About</a>
-
         </div>
 
         <div class="content px-4">
@@ -37,6 +39,16 @@
     {
         Console.WriteLine($"setting theme to: {e.Value.ToString()}");
         await MonacoEditorBase.SetTheme(e.Value.ToString());
+    }
+
+    protected override void OnInitialized()
+    {
+        AppState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AppState.OnChange -= StateHasChanged;
     }
 
 }

@@ -93,3 +93,7 @@ a, .btn-link {
     width:56px;
 }
 
+.hidden {
+    visibility:hidden;
+}
+

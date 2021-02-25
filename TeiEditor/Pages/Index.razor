@@ -8,6 +8,7 @@
 
 @inject IJSRuntime js
 @inject HttpClient _client
+@inject AppState AppState
 @*<div>
     <div style="margin:10px 0;">
                     New Value: <input type="text" @bind="ValueToSet" style="width: 400px;" /> <button @onclick="SetValue">Set Value</button>
@@ -118,6 +119,7 @@
 
     private async Task EditorOnDidInitSource(MonacoEditorBase editor)
     {
+        AppState.isWorking();
         await js.InvokeVoidAsync("registerResize");
         var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
         decorationIdsSource = await DisplayDecoration(_editorSource, 4);
@@ -128,7 +130,9 @@
         await loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr");
         await loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples");
         await loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace");
+        AppState.notWorking();
     }
+
     private async Task EditorOnDidInitTarget(MonacoEditorBase editor)
     {
         //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
@@ -152,7 +156,7 @@
                     GlyphMarginClassName = "decorationGlyphMarginClass"
                 }
             }
-                                                                                                            };
+                                                                                                                            };
         return await editor.DeltaDecorations(null, newDecorations);
     }
 
@@ -210,6 +214,7 @@
 
     private async Task ValidateXML()
     {
+        AppState.isWorking();
 
         try
         {
@@ -227,6 +232,8 @@
             string msg = err.Message;
             //throw;
         }
+
+        AppState.notWorking();
 
     }
 
