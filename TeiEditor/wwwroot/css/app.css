@@ -88,3 +88,8 @@ a, .btn-link {
         opacity: 0;
         cursor: pointer;
     }
+.workingGif{
+    height:56px;
+    width:56px;
+}
+
