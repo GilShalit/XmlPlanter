@@ -7,12 +7,12 @@ namespace TeiEditor
 {
     public class AppState
     {
-        public string hiddenClass { get; set; }
+        public string hiddenClass { get; private set; }
         private int count;
 
         public event Action OnChange;
 
-        public  AppState()
+        public AppState()
         {
             hiddenClass = "hidden";
             count = 0;
