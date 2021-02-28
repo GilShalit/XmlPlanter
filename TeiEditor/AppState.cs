@@ -16,21 +16,29 @@ namespace TeiEditor
         {
             hiddenClass = "hidden";
             count = 0;
+            Console.WriteLine($"CTOR {hiddenClass} {count}");
         }
 
         public void isWorking()
         {
-            count++;
+            count = count + 1;
             hiddenClass = count > 0 ? "" : "hidden";
             NotifyStateChanged();
+            //Console.WriteLine($"is Working {hiddenClass} {count}");
         }
         public void notWorking()
         {
-            count--;
+            count = count - 1;
             hiddenClass = count > 0 ? "" : "hidden";
             NotifyStateChanged();
+            //Console.WriteLine($"not Working {hiddenClass} {count}");
         }
 
-        private void NotifyStateChanged() => OnChange?.Invoke();
+        private void NotifyStateChanged()
+        {
+            OnChange?.Invoke();
+            
+            //Console.WriteLine("Onchange");
+        }
     }
 }

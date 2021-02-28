@@ -156,7 +156,7 @@
                     GlyphMarginClassName = "decorationGlyphMarginClass"
                 }
             }
-                                                                                                                                };
+                                                                                                                                    };
         return await editor.DeltaDecorations(null, newDecorations);
     }
 
@@ -214,10 +214,12 @@
 
     private async Task ValidateXML()
     {
-        AppState.isWorking();
 
         try
         {
+            AppState.isWorking();
+            await Task.Delay(1);
+
             byte[] byteArrayX = Encoding.ASCII.GetBytes(await _editorTarget.GetValue());
             MemoryStream streamX = new MemoryStream(byteArrayX);
             XmlReader reader = XmlReader.Create(streamX);
@@ -232,8 +234,8 @@
             string msg = err.Message;
             //throw;
         }
+        finally { AppState.notWorking(); }
 
-        AppState.notWorking();
 
     }
 
