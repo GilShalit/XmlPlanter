@@ -48,8 +48,9 @@ a, .btn-link {
         right: 0.75rem;
         top: 0.5rem;
     }
+
 .monaco-editor-container {
-/*    height: 80vmin;*/
+    /*    height: 80vmin;*/
     border: 1px solid gray;
 }
 
@@ -71,10 +72,10 @@ a, .btn-link {
     position: relative;
     width: 120px;
     height: 30px;
-    border-width:2px;
-    border-style:solid;
-    border-color:blue;
-    border-radius:3px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: blue;
+    border-radius: 3px;
 }
 
     .file-input-zone:hover {
@@ -88,12 +89,20 @@ a, .btn-link {
         opacity: 0;
         cursor: pointer;
     }
-.workingGif{
-    height:56px;
-    width:56px;
+
+.workingGif {
+    height: 56px;
+    width: 56px;
 }
 
 .hidden {
-    visibility:hidden;
+    visibility: hidden;
 }
 
+.popupValidation {
+    position: absolute;
+    padding: 5px 5px 10px 5px;
+    background-color: lightgray;
+    border-bottom-color: lightgray;
+    border-radius: 3px;
+}
