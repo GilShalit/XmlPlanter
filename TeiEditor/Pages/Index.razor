@@ -276,6 +276,7 @@
     private async Task loadSchema(string path, string nameSpace)
     {
         byte[] byteArrayS = await _client.GetByteArrayAsync(path);
+        Console.WriteLine($"{path}: {byteArrayS.Length}");
         MemoryStream streamS = new MemoryStream(byteArrayS);
         XmlReader xmlSchemaReader = XmlReader.Create(streamS);
         schemaSet.Add(nameSpace, xmlSchemaReader);
