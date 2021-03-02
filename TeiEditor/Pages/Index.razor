@@ -65,6 +65,8 @@
     private string lblChooseTarget = "Choose Target";
     private XmlSchemaSet schemaSet = new XmlSchemaSet();
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
+    [CascadingParameter] public IModalService Modal { get; set; }
+    static private List<string> validationErrors = new List<string>();
 
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
     {
@@ -156,7 +158,7 @@
                     GlyphMarginClassName = "decorationGlyphMarginClass"
                 }
             }
-                                                                                                                                    };
+                                                                                                                                                        };
         return await editor.DeltaDecorations(null, newDecorations);
     }
 
@@ -214,10 +216,10 @@
 
     private async Task ValidateXML()
     {
-
         try
         {
             AppState.isWorking();
+            validationErrors.Clear();
             await Task.Delay(1);
 
             byte[] byteArrayX = Encoding.ASCII.GetBytes(await _editorTarget.GetValue());
@@ -227,29 +229,48 @@
             XmlDocument document = new XmlDocument();
             document.Load(reader);
             document.Schemas = schemaSet;
+            
             document.Validate(eventHandler);
         }
-        catch (Exception err)
+        catch (Exception e)
         {
-            string msg = err.Message;
+            validationErrors.Add(e.Message);
             //throw;
         }
-        finally { AppState.notWorking(); }
-
-
+        finally
+        {
+            AppState.notWorking();
+            ShowValModal();
+        }
     }
+
+    void ShowValModal()
+    {
+        if (validationErrors.Count > 0)
+        {
+            string msg = "";
+            foreach (string s in validationErrors)
+            {
+                msg = msg + s + Environment.NewLine;
+            }
+            ShowModal(msg);
+        }
+    }
+
+    void ShowModal(string msg) => Modal.Show<Confirm>(msg);
 
     static void ValidationEventHandler(object sender, ValidationEventArgs e)
     {
         switch (e.Severity)
         {
             case XmlSeverityType.Error:
-                Console.WriteLine("Error: {0}", e.Message);
+                Console.WriteLine("Error: {0}", e.Exception.LineNumber);
                 break;
             case XmlSeverityType.Warning:
                 Console.WriteLine("Warning {0}", e.Message);
                 break;
         }
+        validationErrors.Add(e.Message);
     }
 
     private async Task loadSchema(string path, string nameSpace)
