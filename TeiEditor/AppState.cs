@@ -16,7 +16,7 @@ namespace TeiEditor
         {
             hiddenClass = "hidden";
             count = 0;
-            Console.WriteLine($"CTOR {hiddenClass} {count}");
+            //Console.WriteLine($"CTOR {hiddenClass} {count}");
         }
 
         public void isWorking()
