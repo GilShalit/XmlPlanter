@@ -4,7 +4,11 @@
     <TargetFramework>net5.0</TargetFramework>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
   </PropertyGroup>
-
+  
+  <PropertyGroup>
+    <BlazorWebAssemblyEnableLinking>false</BlazorWebAssemblyEnableLinking>
+  </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="Blazored.Modal" Version="6.0.1" />
     <PackageReference Include="BlazorMonaco" Version="2.0.0" />
