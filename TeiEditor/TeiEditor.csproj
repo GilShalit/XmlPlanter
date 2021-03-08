@@ -6,7 +6,8 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <BlazorWebAssemblyEnableLinking>false</BlazorWebAssemblyEnableLinking>
+    <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+    <InvariantGlobalization>true</InvariantGlobalization><!-- If the app doesn't require localization, you may configure the app to support the invariant culture -->
   </PropertyGroup>
   
   <ItemGroup>
