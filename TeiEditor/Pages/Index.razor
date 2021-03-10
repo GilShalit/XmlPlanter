@@ -26,7 +26,9 @@
                     @lblChooseSource
                 </div>
                 <div class="col-5" style="padding-top:3px!important">@lblSource</div>
-                <div class="col-2"><button @onclick="ValidateXML">Validate</button></div>
+                <div class="col-3">
+                    <button @onclick="test" class="myButton">test</button>
+                </div>
             </div>
             <div class="row">
                 <div class="col" style="padding-left:0!important;">
@@ -41,11 +43,14 @@
                     @lblChooseTarget
                 </div>
                 <div class="col-5" style="padding-top:3px!important">@lblTarget</div>
-                <div class="col-2"><button @onclick="Download">Download</button></div>
+                <div class="col-3">
+                    <button @onclick="ValidateXML" class="myButton">Validate</button>
+                    <button @onclick="Download" class="myButton">Save</button>
+                </div>
             </div>
             <div class="row">
                 <div class="col" style="padding-left: 0 !important">
-                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitTarget" OnContextMenu="OnContextMenuTarget" />
+                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitTarget" OnContextMenu="OnContextMenuTarget" OnDidChangeModelDecorations="OnDidChangeModelDecorations"/>
                 </div>
             </div>
         </div>
@@ -67,6 +72,33 @@
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
     [CascadingParameter] public IModalService Modal { get; set; }
     static private List<string> validationErrors = new List<string>();
+
+    private async void OnDidChangeModelDecorations(ModelDecorationsChangedEvent eventArgs)
+    {
+        TextModel sourceModel = await _editorSource.GetModel();
+
+    }
+
+    private async Task test()
+    {
+        TextModel sourceModel = await _editorSource.GetModel();
+        List<ModelDeltaDecoration> lstDecorations = new List<ModelDeltaDecoration>();
+        List<FindMatch> matches = await sourceModel.FindMatches("<seg ", false, false, false, null, true, 1000);
+        foreach (FindMatch m in matches)
+        {
+            lstDecorations.Add(new ModelDeltaDecoration
+            {
+                Range = m.Range,
+                Options = new ModelDecorationOptions
+                {
+                    IsWholeLine = false,
+                    ClassName = "decorationContentClass",
+                    GlyphMarginClassName = "decorationGlyphMarginClass"
+                }
+            });
+        }
+        decorationIdsSource = await _editorSource.DeltaDecorations(null, lstDecorations.ToArray());
+    }
 
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
     {
@@ -124,7 +156,7 @@
         AppState.isWorking();
         await js.InvokeVoidAsync("registerResize");
         var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
-        decorationIdsSource = await DisplayDecoration(_editorSource, 4);
+        //decorationIdsSource = await DisplayDecoration(_editorSource, 4);
         // You can now use 'decorationIds' to change or remove the decorations
 
         //load schemaSet for validation
@@ -140,27 +172,27 @@
         //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
 
         var i = await js.InvokeAsync<string>("resizeEditors", "editor-target");
-        decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
+        //decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
         // You can now use 'decorationIds' to change or remove the decorations
     }
 
-    private async Task<string[]> DisplayDecoration(MonacoEditor editor, int iRow)
-    {
-        var newDecorations = new ModelDeltaDecoration[]
-        {
-            new ModelDeltaDecoration
-            {
-                Range = new BlazorMonaco.Range(iRow,1,iRow,3),
-                Options = new ModelDecorationOptions
-                {
-                    IsWholeLine = true,
-                    ClassName = "decorationContentClass",
-                    GlyphMarginClassName = "decorationGlyphMarginClass"
-                }
-            }
-                                                                                                                                                        };
-        return await editor.DeltaDecorations(null, newDecorations);
-    }
+    //private async Task<string[]> DisplayDecoration(MonacoEditor editor, int iRow)
+    //{
+    //    var newDecorations = new ModelDeltaDecoration[]
+    //    {
+    //        new ModelDeltaDecoration
+    //        {
+    //            Range = new BlazorMonaco.Range(iRow,1,iRow,3),
+    //            Options = new ModelDecorationOptions
+    //            {
+    //                IsWholeLine = true,
+    //                ClassName = "decorationContentClass",
+    //                GlyphMarginClassName = "decorationGlyphMarginClass"
+    //            }
+    //        }
+    //                                                                                                                                                    };
+    //    return await editor.DeltaDecorations(null, newDecorations);
+    //}
 
     private async Task<List<string>> LoadXMLfromFile(MonacoEditor editor, IBrowserFile file)
     {
@@ -229,7 +261,7 @@
             XmlDocument document = new XmlDocument();
             document.Load(reader);
             document.Schemas = schemaSet;
-            
+
             document.Validate(eventHandler);
         }
         catch (Exception e)

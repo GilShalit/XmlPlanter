@@ -54,11 +54,13 @@ a, .btn-link {
 }
 
 .decorationGlyphMarginClass {
-    background: red;
+    background: lightgreen;
+    border-radius:10px;
+    margin-left:2px!important;
 }
 
 .decorationContentClass {
-    background: lightblue;
+    background: lightgreen;
 }
 
 .file-input-zone {
@@ -96,4 +98,21 @@ a, .btn-link {
 .hidden {
     visibility:hidden;
 }
+
+.myButton {
+    background-color: lightblue;
+    color: white;
+    cursor: pointer;
+    height: 30px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: blue;
+    border-radius: 3px;
+}
+
+    .myButton:hover {
+        background-color: blue;
+        border-color: blue;
+    }
+
 
