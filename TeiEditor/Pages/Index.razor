@@ -27,7 +27,7 @@
                 </div>
                 <div class="col-5" style="padding-top:3px!important">@lblSource</div>
                 <div class="col-3">
-                    <button @onclick="test" class="myButton">test</button>
+                    <button @onclick="test" class="myButton">temp</button>
                 </div>
             </div>
             <div class="row">
@@ -43,14 +43,14 @@
                     @lblChooseTarget
                 </div>
                 <div class="col-5" style="padding-top:3px!important">@lblTarget</div>
-                <div class="col-3">
+                <div class="col-4">
                     <button @onclick="ValidateXML" class="myButton">Validate</button>
                     <button @onclick="Download" class="myButton">Save</button>
                 </div>
             </div>
             <div class="row">
                 <div class="col" style="padding-left: 0 !important">
-                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitTarget" OnContextMenu="OnContextMenuTarget" OnDidChangeModelDecorations="OnDidChangeModelDecorations"/>
+                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitTarget" OnContextMenu="OnContextMenuTarget" OnDidChangeModelDecorations="OnDidChangeModelDecorations" />
                 </div>
             </div>
         </div>
@@ -72,6 +72,8 @@
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
     [CascadingParameter] public IModalService Modal { get; set; }
     static private List<string> validationErrors = new List<string>();
+    private string tagName { get; set; }
+    List<FindMatch> sourceMatches { get; set; }
 
     private async void OnDidChangeModelDecorations(ModelDecorationsChangedEvent eventArgs)
     {
@@ -81,11 +83,16 @@
 
     private async Task test()
     {
+        AppState.isWorking();
+        await Task.Delay(1);
+
+        tagName = "seg";
         TextModel sourceModel = await _editorSource.GetModel();
         List<ModelDeltaDecoration> lstDecorations = new List<ModelDeltaDecoration>();
-        List<FindMatch> matches = await sourceModel.FindMatches("<seg ", false, false, false, null, true, 1000);
-        foreach (FindMatch m in matches)
+        sourceMatches = await sourceModel.FindMatches($"<{tagName} ", false, false, false, null, true, 1000);
+        foreach (FindMatch m in sourceMatches)
         {
+            m.Range = await ExpandTagRange(m.Range, sourceModel);
             lstDecorations.Add(new ModelDeltaDecoration
             {
                 Range = m.Range,
@@ -93,11 +100,31 @@
                 {
                     IsWholeLine = false,
                     ClassName = "decorationContentClass",
-                    GlyphMarginClassName = "decorationGlyphMarginClass"
+                    GlyphMarginClassName = "decorationGlyphMarginClass",
+                    Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline, Color = "#90EE90" }
                 }
             });
         }
         decorationIdsSource = await _editorSource.DeltaDecorations(null, lstDecorations.ToArray());
+        await _editorSource.RevealLineInCenter(sourceMatches[0].Range.StartLineNumber);
+
+        AppState.notWorking();
+    }
+
+    private async Task<BlazorMonaco.Range> ExpandTagRange(BlazorMonaco.Range matchRange, TextModel model)
+    {
+        BlazorMonaco.Range newRange = new BlazorMonaco.Range()
+        {
+            StartColumn = matchRange.StartColumn,
+            StartLineNumber = matchRange.StartLineNumber
+        };
+
+        string line = await model.GetLineContent(matchRange.EndLineNumber);
+        int endCol = line.IndexOf(">") + 2;
+        newRange.EndColumn = endCol;
+        newRange.EndLineNumber = matchRange.EndLineNumber;
+
+        return newRange;
     }
 
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
@@ -105,9 +132,11 @@
         return new StandaloneEditorConstructionOptions
         {
             GlyphMargin = true,
-            AutomaticLayout = true
+            AutomaticLayout = true,
+
         };
     }
+
     private async Task Download()
     {
         if (await js.InvokeAsync<int>("isChrome") > -1)
