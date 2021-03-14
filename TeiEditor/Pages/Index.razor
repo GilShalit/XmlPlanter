@@ -9,14 +9,6 @@
 @inject IJSRuntime js
 @inject HttpClient _client
 @inject AppState AppState
-@*<div>
-    <div style="margin:10px 0;">
-                    New Value: <input type="text" @bind="ValueToSet" style="width: 400px;" /> <button @onclick="SetValue">Set Value</button>
-                </div>
-                <div style="margin:10px 0;">
-                    <button @onclick="GetValue">Get Value</button>
-                </div>
-        </div>*@
 <div class="container-fluid">
     <div class="row w-100">
         <div class="col">
@@ -32,7 +24,7 @@
             </div>
             <div class="row">
                 <div class="col" style="padding-left:0!important;">
-                    <MonacoEditor @ref="_editorSource" Id="editor-source" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitSource" OnContextMenu="OnContextMenuSource" />
+                    <MonacoEditor @ref="_editorSource" Id="editor-source" ConstructionOptions="EditorConstructionOptions" OnDidInit="OnDidInitSource" OnContextMenu="OnContextMenuSource" />
                 </div>
             </div>
         </div>
@@ -50,7 +42,7 @@
             </div>
             <div class="row">
                 <div class="col" style="padding-left: 0 !important">
-                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="EditorOnDidInitTarget" OnContextMenu="OnContextMenuTarget" OnDidChangeModelDecorations="OnDidChangeModelDecorations" />
+                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="OnDidInitTarget" OnContextMenu="OnContextMenuTarget" />
                 </div>
             </div>
         </div>
@@ -75,12 +67,6 @@
     private string tagName { get; set; }
     List<FindMatch> sourceMatches { get; set; }
 
-    private async void OnDidChangeModelDecorations(ModelDecorationsChangedEvent eventArgs)
-    {
-        TextModel sourceModel = await _editorSource.GetModel();
-
-    }
-
     private async Task test()
     {
         AppState.isWorking();
@@ -92,7 +78,7 @@
         sourceMatches = await sourceModel.FindMatches($"<{tagName} ", false, false, false, null, true, 1000);
         foreach (FindMatch m in sourceMatches)
         {
-            m.Range = await ExpandTagRange(m.Range, sourceModel);
+            m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel);
             lstDecorations.Add(new ModelDeltaDecoration
             {
                 Range = m.Range,
@@ -106,25 +92,12 @@
             });
         }
         decorationIdsSource = await _editorSource.DeltaDecorations(null, lstDecorations.ToArray());
-        await _editorSource.RevealLineInCenter(sourceMatches[0].Range.StartLineNumber);
+        if (sourceMatches.Count > 0)
+        {
+            await _editorSource.RevealLineInCenter(sourceMatches[0].Range.StartLineNumber);
+        }
 
         AppState.notWorking();
-    }
-
-    private async Task<BlazorMonaco.Range> ExpandTagRange(BlazorMonaco.Range matchRange, TextModel model)
-    {
-        BlazorMonaco.Range newRange = new BlazorMonaco.Range()
-        {
-            StartColumn = matchRange.StartColumn,
-            StartLineNumber = matchRange.StartLineNumber
-        };
-
-        string line = await model.GetLineContent(matchRange.EndLineNumber);
-        int endCol = line.IndexOf(">") + 2;
-        newRange.EndColumn = endCol;
-        newRange.EndLineNumber = matchRange.EndLineNumber;
-
-        return newRange;
     }
 
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
@@ -165,7 +138,7 @@
         {
             lblSource = $"{lblSource} is larger the 500kb!";
         }
-        lSourceLines = await LoadXMLfromFile(_editorSource, e.File);
+        lSourceLines = await Helpers.LoadXMLfromFile(_editorSource, e.File);
     }
 
     private async Task OnTargetFileChange(InputFileChangeEventArgs e)
@@ -177,10 +150,10 @@
         {
             lblTarget = $"{lblTarget} is larger the 500kb!";
         }
-        lTargetLines = await LoadXMLfromFile(_editorTarget, e.File);
+        lTargetLines = await Helpers.LoadXMLfromFile(_editorTarget, e.File);
     }
 
-    private async Task EditorOnDidInitSource(MonacoEditorBase editor)
+    private async Task OnDidInitSource(MonacoEditorBase editor)
     {
         AppState.isWorking();
         await js.InvokeVoidAsync("registerResize");
@@ -189,14 +162,16 @@
         // You can now use 'decorationIds' to change or remove the decorations
 
         //load schemaSet for validation
-        await loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0");
-        await loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr");
-        await loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples");
-        await loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace");
+        await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0",schemaSet,_client);
+        await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", schemaSet, _client);
         AppState.notWorking();
+
+        await AddAction();
     }
 
-    private async Task EditorOnDidInitTarget(MonacoEditorBase editor)
+    private async Task OnDidInitTarget(MonacoEditorBase editor)
     {
         //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
 
@@ -205,66 +180,14 @@
         // You can now use 'decorationIds' to change or remove the decorations
     }
 
-    //private async Task<string[]> DisplayDecoration(MonacoEditor editor, int iRow)
-    //{
-    //    var newDecorations = new ModelDeltaDecoration[]
-    //    {
-    //        new ModelDeltaDecoration
-    //        {
-    //            Range = new BlazorMonaco.Range(iRow,1,iRow,3),
-    //            Options = new ModelDecorationOptions
-    //            {
-    //                IsWholeLine = true,
-    //                ClassName = "decorationContentClass",
-    //                GlyphMarginClassName = "decorationGlyphMarginClass"
-    //            }
-    //        }
-    //                                                                                                                                                    };
-    //    return await editor.DeltaDecorations(null, newDecorations);
-    //}
-
-    private async Task<List<string>> LoadXMLfromFile(MonacoEditor editor, IBrowserFile file)
-    {
-        byte[] bytesOfXML = new byte[file.Size];
-        using (Stream strm = file.OpenReadStream())
-        {
-            await strm.ReadAsync(bytesOfXML);
-        }
-        string stringOfXML = Encoding.UTF8.GetString(bytesOfXML);
-        TextModel model = await MonacoEditorBase.CreateModel(stringOfXML, "xml");
-        await editor.SetModel(model);
-
-        List<string> lLines = stringOfXML.Split("\n").ToList<string>();
-        return lLines;
-    }
-
     private void OnContextMenuSource(EditorMouseEvent eventArg)
     {
         Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
     }
+
     private void OnContextMenuTarget(EditorMouseEvent eventArg)
     {
         Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
-    }
-
-    private async Task SetValue()
-    {
-        Console.WriteLine($"setting value to: {ValueToSet}");
-        await _editorSource.SetValue(ValueToSet);
-    }
-
-    private async Task GetValue()
-    {
-        var val = await _editorSource.GetValue();
-        Console.WriteLine($"value is: {val}");
-    }
-
-    private async Task AddCommand()
-    {//https://github.com/microsoft/monaco-editor/issues/1901#issuecomment-609018281
-        await _editorSource.AddCommand((int)KeyMode.CtrlCmd | (int)KeyCode.Enter, (editor, keyCode) =>
-        {
-            Console.WriteLine("Ctrl+Enter : Editor command is triggered.");
-        });
     }
 
     private async Task AddAction()
@@ -314,11 +237,9 @@
             {
                 msg = msg + s + Environment.NewLine;
             }
-            ShowModal(msg);
+            Helpers.ShowModal(msg, Modal);
         }
     }
-
-    void ShowModal(string msg) => Modal.Show<Confirm>(msg);
 
     static void ValidationEventHandler(object sender, ValidationEventArgs e)
     {
@@ -334,14 +255,21 @@
         validationErrors.Add(e.Message);
     }
 
-    private async Task loadSchema(string path, string nameSpace)
-    {
-        byte[] byteArrayS = await _client.GetByteArrayAsync(path);
-        Console.WriteLine($"{path}: {byteArrayS.Length}");
-        MemoryStream streamS = new MemoryStream(byteArrayS);
-        XmlReader xmlSchemaReader = XmlReader.Create(streamS);
-        schemaSet.Add(nameSpace, xmlSchemaReader);
-    }
-
-
+    //private async Task<string[]> DisplayDecoration(MonacoEditor editor, int iRow)
+    //{
+    //    var newDecorations = new ModelDeltaDecoration[]
+    //    {
+    //        new ModelDeltaDecoration
+    //        {
+    //            Range = new BlazorMonaco.Range(iRow,1,iRow,3),
+    //            Options = new ModelDecorationOptions
+    //            {
+    //                IsWholeLine = true,
+    //                ClassName = "decorationContentClass",
+    //                GlyphMarginClassName = "decorationGlyphMarginClass"
+    //            }
+    //        }
+    //                                                                                                                                                    };
+    //    return await editor.DeltaDecorations(null, newDecorations);
+    //}
 }
