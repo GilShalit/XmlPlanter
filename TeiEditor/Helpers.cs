@@ -13,8 +13,9 @@ using System.Xml;
 using System.Xml.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using TeiEditor.Pages;
 
-namespace TeiEditor.Pages
+namespace TeiEditor
 {
     public enum enmX2XMode
     {

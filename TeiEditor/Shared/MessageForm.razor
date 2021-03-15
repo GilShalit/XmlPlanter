@@ -1,0 +1,42 @@
+﻿@inject AppState AppState
+
+<div class="simple-form">
+
+    <div class="form-group">
+        <label for="Tag">Tag Name</label>
+        <input @bind="Tag" type="text" class="form-control" id="tag" placeholder="Tag to work on" />
+    </div>
+    <div class="form-group">
+        <label for="Attribute">Attribute Name</label>
+        <input @bind="Attribute" type="text" class="form-control" id="attribute" placeholder="Attribute to work on" />
+    </div>
+
+    <button @onclick="SubmitForm" class="btn btn-primary">Submit</button>
+    <button @onclick="Cancel" class="btn btn-secondary">Cancel</button>
+</div>
+
+@code {
+
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+
+    string Tag { get; set; }
+    string Attribute { get; set; }
+
+    protected override void OnInitialized()
+    {
+        //BlazoredModal.SetTitle("Enter a Message");
+        Tag = AppState.tagName;
+        Attribute = AppState.attribName;
+    }
+
+    async Task SubmitForm()
+    {
+        AppState.tagName = Tag;
+        AppState.attribName = Attribute;
+//        await BlazoredModal.CloseAsync(ModalResult.Ok(Tag));
+        await BlazoredModal.CloseAsync();
+    }
+
+    async Task Cancel() => await BlazoredModal.CancelAsync();
+
+}

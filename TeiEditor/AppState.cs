@@ -8,6 +8,8 @@ namespace TeiEditor
     public class AppState
     {
         public string hiddenClass { get; private set; }
+        public string tagName { get; set; }
+        public string attribName { get; set; }
         private int count;
 
         public event Action OnChange;
@@ -15,6 +17,9 @@ namespace TeiEditor
         public AppState()
         {
             hiddenClass = "hidden";
+            tagName = "seg";
+            attribName = "xml:id";
+
             count = 0;
             //Console.WriteLine($"CTOR {hiddenClass} {count}");
         }
@@ -37,7 +42,7 @@ namespace TeiEditor
         private void NotifyStateChanged()
         {
             OnChange?.Invoke();
-            
+
             //Console.WriteLine("Onchange");
         }
     }

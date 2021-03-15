@@ -17,14 +17,15 @@
             <NavLink class="nav-link disabled" href="NewPage" Match="NavLinkMatch.All">
                 <span aria-hidden="true"></span>Xml2Tsv2Xml
             </NavLink>
-            <div style="margin:5px 10px 5px 10px;">
+            <button class="btn btn-primary" @onclick="getConfig">Configuration</button>
+            @*<div style="margin:5px 10px 5px 10px;">
                 Theme:
                 <select @onchange="ChangeTheme">
                     <option value="vs">Visual Studio</option>
                     <option value="vs-dark">Visual Studio Dark</option>
                     <option value="hc-black">High Contrast Black</option>
                 </select>
-            </div>
+            </div>*@
             <a href="#" target="_blank" class="ml-md-auto">About</a>
         </div>
 
@@ -35,6 +36,22 @@
 </div>
 
 @code {
+
+    [CascadingParameter] public IModalService Modal { get; set; }
+    private async void getConfig()
+    {
+        ModalOptions options = new ModalOptions() { HideCloseButton = true, Animation = ModalAnimation.FadeInOut(0.5) };
+
+        var messageForm = Modal.Show<MessageForm>(title: "Configuration",options: options);
+        var result = await messageForm.Result;
+
+        //if (!result.Cancelled)
+        //{
+        //    string _message = result.Data?.ToString() ?? string.Empty;
+        //    Helpers.ShowModal(_message, Modal);
+        //}
+
+    }
     private async Task ChangeTheme(ChangeEventArgs e)
     {
         Console.WriteLine($"setting theme to: {e.Value.ToString()}");
