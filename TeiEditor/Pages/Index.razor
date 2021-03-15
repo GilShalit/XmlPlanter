@@ -105,7 +105,7 @@
 
     private async void CopyTag()
     {
-        Position p= await _editorSource.GetPosition();
+        Position p = await _editorSource.GetPosition();
         //int line = p.LineNumber;
 
         BlazorMonaco.Range dec = (from d in decorationIdsSource
@@ -114,33 +114,36 @@
         if (dec != null)
         {
             TextModel sourceModel = await _editorSource.GetModel();
-            string tag = await sourceModel.GetValueInRange(dec,EndOfLinePreference.CRLF);
+            string tag = await sourceModel.GetValueInRange(dec, EndOfLinePreference.CRLF);
 
             Selection targetSel = await _editorTarget.GetSelection();
-            BlazorMonaco.Range targetStartRange = new BlazorMonaco.Range()
+            Position targetStartPos = new Position()
             {
-                StartColumn = targetSel.StartColumn,
-                StartLineNumber = targetSel.StartLineNumber,
-                EndColumn = targetSel.StartColumn,
-                EndLineNumber = targetSel.StartLineNumber
-            };
-            BlazorMonaco.Range targetEndRange = new BlazorMonaco.Range()
-            {
-                StartColumn = targetSel.EndColumn,
-                StartLineNumber = targetSel.EndLineNumber,
-                EndColumn = targetSel.EndColumn,
-                EndLineNumber = targetSel.EndLineNumber
-            };
 
-            if (targetSel.StartLineNumber!=targetSel.EndLineNumber || targetSel.StartColumn != targetSel.EndColumn)
+                Column = targetSel.StartColumn,
+                LineNumber = targetSel.StartLineNumber,
+            };
+            Position targetEndPos = new Position()
+            {
+                Column = targetSel.EndColumn,
+                LineNumber = targetSel.EndLineNumber
+            };
+            if (targetStartPos.LineNumber == targetEndPos.LineNumber)
+            {
+                targetEndPos.Column += tag.Length;
+            }
+
+            if (targetSel.StartLineNumber != targetSel.EndLineNumber || targetSel.StartColumn != targetSel.EndColumn)
             {//a range is selected
-             //BlazorMonaco.id id1 =new { major: 1, minor: 1 };
-             //System.Text.Json.JsonElement je =new System.Text.Json.JsonElement() { V}
-                await _editorTarget.Trigger("keyboard", "type",Helpers.TextToJson(tag) );
+                await _editorTarget.SetPosition(targetStartPos);
+                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.OpenTag));
+
+                await _editorTarget.SetPosition(targetEndPos);
+                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson($"</{tagName}>", enmTagChanges.DoNothing));
             }
             else
             {//insert at cursor
-                await _editorTarget.Trigger("keyboard", "type", Helpers.TextToJson(tag));
+                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.CloseTag));
             }
 
             // !!! use this to find and replace attribute values

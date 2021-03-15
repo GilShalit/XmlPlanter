@@ -16,29 +16,29 @@ using System.Text.Json.Serialization;
 
 namespace TeiEditor.Pages
 {
-    enum enmX2XMode
+    public enum enmX2XMode
     {
         None = 0,
         CopyTagWithAttribs = 1
 
     }
+    public enum enmTagChanges
+    {
+        DoNothing=0,
+        OpenTag,
+        CloseTag
+    }
 
     public static class Helpers
     {
-        public static JsonElement TextToJson(string Text)
+        public static JsonElement TagToJson(string Text, enmTagChanges tagChange)
         {
+            if (tagChange==enmTagChanges.OpenTag) Text = Text.Replace("/>", ">").Replace("/ >", ">");
+            if (tagChange == enmTagChanges.CloseTag) if (Text.IndexOf("/") == -1) Text.Replace(">", "/>");
             Text = Text.Replace("\"", "\\\"");
             var t= $"{{\"text\": \"{Text}\"}}";
             JsonDocument doc;
-            try
-            {
-                 doc = JsonDocument.Parse(t);
-            }
-            catch (Exception e)
-            {
-              
-                throw;
-            }
+            doc = JsonDocument.Parse(t);
             return doc.RootElement;
         }
         public static async Task<BlazorMonaco.Range> ExpandTagRange(BlazorMonaco.Range matchRange, TextModel model)
