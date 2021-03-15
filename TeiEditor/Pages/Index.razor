@@ -42,7 +42,7 @@
             </div>
             <div class="row">
                 <div class="col" style="padding-left: 0 !important">
-                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="OnDidInitTarget" OnContextMenu="OnContextMenuTarget" />
+                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="OnDidInitTarget" OnContextMenu="OnContextMenuTarget" /> @*onDidChangeCursorSelection="onDidChangeCursorSelectionTarget" />*@
                 </div>
             </div>
         </div>
@@ -54,7 +54,7 @@
     private List<string> lSourceLines = new List<string>();
     private List<string> lTargetLines = new List<string>();
     private string ValueToSet { get; set; }
-    private string[] decorationIdsSource;
+    private Dictionary<string, BlazorMonaco.Range> decorationIdsSource = new Dictionary<string, BlazorMonaco.Range>();
     private string[] decorationIdsTarget;
     private string lblSource = "";
     private string lblChooseSource = "Choose Source";
@@ -72,32 +72,83 @@
         AppState.isWorking();
         await Task.Delay(1);
 
-        tagName = "seg";
         TextModel sourceModel = await _editorSource.GetModel();
         List<ModelDeltaDecoration> lstDecorations = new List<ModelDeltaDecoration>();
         sourceMatches = await sourceModel.FindMatches($"<{tagName} ", false, false, false, null, true, 1000);
-        foreach (FindMatch m in sourceMatches)
-        {
-            m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel);
-            lstDecorations.Add(new ModelDeltaDecoration
-            {
-                Range = m.Range,
-                Options = new ModelDecorationOptions
-                {
-                    IsWholeLine = false,
-                    ClassName = "decorationContentClass",
-                    GlyphMarginClassName = "decorationGlyphMarginClass",
-                    Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline, Color = "#90EE90" }
-                }
-            });
-        }
-        decorationIdsSource = await _editorSource.DeltaDecorations(null, lstDecorations.ToArray());
         if (sourceMatches.Count > 0)
         {
+            foreach (FindMatch m in sourceMatches)
+            {
+                m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel);
+                lstDecorations.Add(new ModelDeltaDecoration
+                {
+                    Range = m.Range,
+                    Options = new ModelDecorationOptions
+                    {
+                        IsWholeLine = false,
+                        ClassName = "decorationContentClass",
+                        GlyphMarginClassName = "decorationGlyphMarginClass",
+                        Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline, Color = "#90EE90" }
+                    }
+                });
+            }
+            string[] decorations = await _editorSource.DeltaDecorations(null, lstDecorations.ToArray());
+            for (int i = 0; i < sourceMatches.Count; i++)
+            {
+                decorationIdsSource.Add(decorations[i], sourceMatches[i].Range);
+            }
             await _editorSource.RevealLineInCenter(sourceMatches[0].Range.StartLineNumber);
         }
 
         AppState.notWorking();
+    }
+
+    private async void CopyTag()
+    {
+        Position p= await _editorSource.GetPosition();
+        //int line = p.LineNumber;
+
+        BlazorMonaco.Range dec = (from d in decorationIdsSource
+                                  where d.Value.StartLineNumber <= p.LineNumber && d.Value.EndLineNumber >= p.LineNumber
+                                  select d.Value).FirstOrDefault();
+        if (dec != null)
+        {
+            TextModel sourceModel = await _editorSource.GetModel();
+            string tag = await sourceModel.GetValueInRange(dec,EndOfLinePreference.CRLF);
+
+            Selection targetSel = await _editorTarget.GetSelection();
+            BlazorMonaco.Range targetStartRange = new BlazorMonaco.Range()
+            {
+                StartColumn = targetSel.StartColumn,
+                StartLineNumber = targetSel.StartLineNumber,
+                EndColumn = targetSel.StartColumn,
+                EndLineNumber = targetSel.StartLineNumber
+            };
+            BlazorMonaco.Range targetEndRange = new BlazorMonaco.Range()
+            {
+                StartColumn = targetSel.EndColumn,
+                StartLineNumber = targetSel.EndLineNumber,
+                EndColumn = targetSel.EndColumn,
+                EndLineNumber = targetSel.EndLineNumber
+            };
+
+            if (targetSel.StartLineNumber!=targetSel.EndLineNumber || targetSel.StartColumn != targetSel.EndColumn)
+            {//a range is selected
+             //BlazorMonaco.id id1 =new { major: 1, minor: 1 };
+             //System.Text.Json.JsonElement je =new System.Text.Json.JsonElement() { V}
+                await _editorTarget.Trigger("keyboard", "type",Helpers.TextToJson(tag) );
+            }
+            else
+            {//insert at cursor
+                await _editorTarget.Trigger("keyboard", "type", Helpers.TextToJson(tag));
+            }
+
+            // !!! use this to find and replace attribute values
+            //XmlDocument node = new XmlDocument();
+            //node.LoadXml($"{tag}</{tagName}>");
+            //string s = node.DocumentElement.Attributes[0].Value;
+
+        }
     }
 
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
@@ -110,23 +161,43 @@
         };
     }
 
-    private async Task Download()
+    private async Task OnDidInitSource(MonacoEditorBase editor)
     {
-        if (await js.InvokeAsync<int>("isChrome") > -1)
-        {
-            var w1 = await js.InvokeAsync<string>("getWidth", "editor-source");
-            var w2 = await js.InvokeAsync<string>("getWidth", "editor-target");
-            var h1 = await js.InvokeAsync<string>("getHeight", "editor-source");
-            var h2 = await js.InvokeAsync<string>("getHeight", "editor-target");
+        tagName = "seg";
 
-            await js.InvokeVoidAsync("setSize", "editor-source", w1, h1);
-            await js.InvokeVoidAsync("setSize", "editor-target", w2, h2);
-        }
+        AppState.isWorking();
+        await js.InvokeVoidAsync("registerResize");
+        var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
+        //decorationIdsSource = await DisplayDecoration(_editorSource, 4);
+        // You can now use 'decorationIds' to change or remove the decorations
 
-        byte[] file = System.Text.Encoding.UTF8.GetBytes(await _editorTarget.GetValue());
-        await js.InvokeVoidAsync("BlazorDownloadFile", lblTarget, "text/xml", file);
+        //load schemaSet for validation
+        await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0", schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", schemaSet, _client);
+        AppState.notWorking();
 
+        await AddCopyTagAction();
+    }
 
+    private async Task OnDidInitTarget(MonacoEditorBase editor)
+    {
+        //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
+
+        var i = await js.InvokeAsync<string>("resizeEditors", "editor-target");
+        //decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
+        // You can now use 'decorationIds' to change or remove the decorations
+    }
+
+    private void OnContextMenuSource(EditorMouseEvent eventArg)
+    {
+        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
+    }
+
+    private void OnContextMenuTarget(EditorMouseEvent eventArg)
+    {
+        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
     }
 
     private async Task OnSourceFileChange(InputFileChangeEventArgs e)
@@ -153,49 +224,17 @@
         lTargetLines = await Helpers.LoadXMLfromFile(_editorTarget, e.File);
     }
 
-    private async Task OnDidInitSource(MonacoEditorBase editor)
-    {
-        AppState.isWorking();
-        await js.InvokeVoidAsync("registerResize");
-        var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
-        //decorationIdsSource = await DisplayDecoration(_editorSource, 4);
-        // You can now use 'decorationIds' to change or remove the decorations
+    //private void onDidChangeCursorSelectionTarget(CursorSelectionChangedEvent eventArgs)
+    //{
 
-        //load schemaSet for validation
-        await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0",schemaSet,_client);
-        await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", schemaSet, _client);
-        AppState.notWorking();
+    //}
 
-        await AddAction();
-    }
-
-    private async Task OnDidInitTarget(MonacoEditorBase editor)
-    {
-        //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
-
-        var i = await js.InvokeAsync<string>("resizeEditors", "editor-target");
-        //decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
-        // You can now use 'decorationIds' to change or remove the decorations
-    }
-
-    private void OnContextMenuSource(EditorMouseEvent eventArg)
-    {
-        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
-    }
-
-    private void OnContextMenuTarget(EditorMouseEvent eventArg)
-    {
-        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
-    }
-
-    private async Task AddAction()
+    private async Task AddCopyTagAction()
     {//https://stackoverflow.com/questions/64057359/difference-between-editor-addaction-and-editor-addcommand-and-their-use-case
-        await _editorSource.AddAction("testAction", "Test Action", new int[] { (int)KeyMode.CtrlCmd | (int)KeyCode.KEY_D, (int)KeyMode.CtrlCmd | (int)KeyCode.KEY_B }, null, null, "navigation", 1.5, (editor, keyCodes) =>
-        {
-            Console.WriteLine("Ctrl+D : Editor action is triggered.");
-        });
+        await _editorSource.AddAction("CopyTag", "Copy Tag with Attributes",
+            new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_T },
+            null, null, "navigation", 1.5, (editor, keyCodes) => CopyTag()
+);
     }
 
     private async Task ValidateXML()
@@ -253,6 +292,25 @@
                 break;
         }
         validationErrors.Add(e.Message);
+    }
+
+    private async Task Download()
+    {
+        if (await js.InvokeAsync<int>("isChrome") > -1)
+        {
+            var w1 = await js.InvokeAsync<string>("getWidth", "editor-source");
+            var w2 = await js.InvokeAsync<string>("getWidth", "editor-target");
+            var h1 = await js.InvokeAsync<string>("getHeight", "editor-source");
+            var h2 = await js.InvokeAsync<string>("getHeight", "editor-target");
+
+            await js.InvokeVoidAsync("setSize", "editor-source", w1, h1);
+            await js.InvokeVoidAsync("setSize", "editor-target", w2, h2);
+        }
+
+        byte[] file = System.Text.Encoding.UTF8.GetBytes(await _editorTarget.GetValue());
+        await js.InvokeVoidAsync("BlazorDownloadFile", lblTarget, "text/xml", file);
+
+
     }
 
     //private async Task<string[]> DisplayDecoration(MonacoEditor editor, int iRow)

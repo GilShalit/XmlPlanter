@@ -11,11 +11,36 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Schema;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace TeiEditor.Pages
 {
+    enum enmX2XMode
+    {
+        None = 0,
+        CopyTagWithAttribs = 1
+
+    }
+
     public static class Helpers
     {
+        public static JsonElement TextToJson(string Text)
+        {
+            Text = Text.Replace("\"", "\\\"");
+            var t= $"{{\"text\": \"{Text}\"}}";
+            JsonDocument doc;
+            try
+            {
+                 doc = JsonDocument.Parse(t);
+            }
+            catch (Exception e)
+            {
+              
+                throw;
+            }
+            return doc.RootElement;
+        }
         public static async Task<BlazorMonaco.Range> ExpandTagRange(BlazorMonaco.Range matchRange, TextModel model)
         {
             BlazorMonaco.Range newRange = new BlazorMonaco.Range()
