@@ -17,12 +17,6 @@ using TeiEditor.Pages;
 
 namespace TeiEditor
 {
-    public enum enmX2XMode
-    {
-        None = 0,
-        CopyTagWithAttribs = 1
-
-    }
     public enum enmTagChanges
     {
         DoNothing=0,
@@ -61,7 +55,7 @@ namespace TeiEditor
 
             int tagCloseLine = matchRange.EndLineNumber;
             string line = await model.GetLineContent(tagCloseLine);
-            int tagCloseCol = line.IndexOf(">");
+            int tagCloseCol = line.IndexOf(">",matchRange.EndColumn-1);
             if (tagCloseCol == -1) //not found
             {
                 tagCloseLine++;
