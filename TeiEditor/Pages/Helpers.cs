@@ -33,8 +33,17 @@ namespace TeiEditor.Pages
     {
         public static JsonElement TagToJson(string Text, enmTagChanges tagChange)
         {
-            if (tagChange==enmTagChanges.OpenTag) Text = Text.Replace("/>", ">").Replace("/ >", ">");
-            if (tagChange == enmTagChanges.CloseTag) if (Text.IndexOf("/") == -1) Text.Replace(">", "/>");
+            switch (tagChange)
+            {
+                case enmTagChanges.OpenTag:
+                    Text = Text.Replace("/>", ">").Replace("/ >", ">");
+                    break;
+                case enmTagChanges.CloseTag:
+                    if (Text.IndexOf("/") == -1) Text = Text.Replace(">", "/>");
+                    break;
+                case enmTagChanges.DoNothing:
+                    break;
+            }
             Text = Text.Replace("\"", "\\\"");
             var t= $"{{\"text\": \"{Text}\"}}";
             JsonDocument doc;
