@@ -10,22 +10,22 @@
 @inject HttpClient _client
 @inject AppState AppState
 <div class="container-fluid">
-    <div class="row w-100">
-        <div class="col">
-            <div class="row" style="margin-bottom:5px">
-                <div class="col">
-                    About
-                </div>
-            </div>
+    <h1></h1>
+    <div class="row w-100 text-center">
+        <div class="col" style="font-size:larger">
+            About XmlPlanter
         </div>
-        <div class="row">
-            <div class="col" style="padding-left:0!important;">
-            </div>
+    </div>
+    <div class="row">
+        <div class="col" style=" font-size:large">
+            Version=@version
         </div>
     </div>
 </div>
 @code {
+    string version;
     protected  override void OnInitialized()
     {
+        version = GetType().Assembly.GetName().Version.ToString();
     }
 }
