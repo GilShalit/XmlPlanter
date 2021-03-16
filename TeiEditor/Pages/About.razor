@@ -1,0 +1,31 @@
+﻿@page "/About"
+
+@using System.IO
+@using System.Net.Http
+@using System.Text
+@using System.Xml;
+@using System.Xml.Schema;
+
+@inject IJSRuntime js
+@inject HttpClient _client
+@inject AppState AppState
+<div class="container-fluid">
+    <div class="row w-100">
+        <div class="col">
+            <div class="row" style="margin-bottom:5px">
+                <div class="col">
+                    About
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col" style="padding-left:0!important;">
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    protected  override void OnInitialized()
+    {
+    }
+}
