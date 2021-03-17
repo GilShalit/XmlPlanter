@@ -28,7 +28,7 @@ namespace TeiEditor
     {
         public static async Task markTags(MonacoEditor editor, string tag, 
             List<FindMatch> sourceMatches,
-            Dictionary<string, BlazorMonaco.Range> decorationIdsSource)
+            Dictionary<string, BlazorMonaco.Range> sourceDecorations)
         {
             TextModel sourceModel = await editor.GetModel();
             await editor.ResetDeltaDecorations();
@@ -45,19 +45,39 @@ namespace TeiEditor
                         Options = new ModelDecorationOptions
                         {
                             IsWholeLine = false,
-                            ClassName = "decorationContentClass",
-                            GlyphMarginClassName = "decorationGlyphMarginClass",
-                            Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline, Color = "#90EE90" }
+                            ClassName = "decorationContent",
+                            GlyphMarginClassName = "decorationGlyphMargin",
+                            Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline , Color = "#FFFF00" }//#90EE90 #FFFFFE
                         }
                     });
                 }
                 string[] decorations = await editor.DeltaDecorations(null, lstDecorations.ToArray());
                 for (int i = 0; i < sourceMatches.Count; i++)
                 {
-                    decorationIdsSource.Add(decorations[i], sourceMatches[i].Range);
+                    sourceDecorations.Add(decorations[i], sourceMatches[i].Range);
                 }
                 await editor.RevealLineInCenter(sourceMatches[0].Range.StartLineNumber);
             }
+        }
+
+        public static async Task ColorToDone(string id ,BlazorMonaco.Range range,MonacoEditor editor)
+        {
+            string[] targetID = new string[] { id };
+            List<ModelDeltaDecoration> newDec = new List<ModelDeltaDecoration>(){
+                new ModelDeltaDecoration
+                {
+                    Range = range,
+                    Options = new ModelDecorationOptions
+                    {
+                        IsWholeLine = false,
+                        ClassName = "decorationContentDone",
+                        GlyphMarginClassName = "decorationGlyphMarginDone",
+                        Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline, Color = "#90EE90" }
+                    }
+                } };
+
+            string[] decorations = await editor.DeltaDecorations(targetID, newDec.ToArray());
+
         }
 
         public static JsonElement TagToJson(string Text, enmTagChanges tagChange)

@@ -53,14 +53,24 @@ a, .btn-link {
     border: 1px solid gray;
 }
 
-.decorationGlyphMarginClass {
+.decorationGlyphMarginDone {
     background: lightgreen;
     border-radius:10px;
     margin-left:2px!important;
 }
 
-.decorationContentClass {
+.decorationContentDone {
     background: lightgreen;
+}
+
+.decorationGlyphMargin {
+    background: yellow;
+    border-radius: 10px;
+    margin-left: 2px !important;
+}
+
+.decorationContent {
+    background: yellow;
 }
 
 .file-input-zone {

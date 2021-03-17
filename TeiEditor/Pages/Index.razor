@@ -54,7 +54,7 @@
     private List<string> lSourceLines = new List<string>();
     private List<string> lTargetLines = new List<string>();
     private string ValueToSet { get; set; }
-    private Dictionary<string, BlazorMonaco.Range> decorationIdsSource = new Dictionary<string, BlazorMonaco.Range>();
+    private Dictionary<string, BlazorMonaco.Range> sourceDecorations = new Dictionary<string, BlazorMonaco.Range>();
     private string[] decorationIdsTarget;
     private string lblSource = "";
     private string lblChooseSource = "Choose Source";
@@ -71,7 +71,7 @@
         AppState.isWorking();
         await Task.Delay(1);
 
-        await Helpers.markTags(_editorSource, AppState.tagName, sourceMatches, decorationIdsSource);
+        await Helpers.markTags(_editorSource, AppState.tagName, sourceMatches, sourceDecorations);
 
         AppState.notWorking();
     }
@@ -98,17 +98,18 @@
         }
 
         Position p = await _editorSource.GetPosition();
-        BlazorMonaco.Range dec = (from d in decorationIdsSource
-                                  where d.Value.StartLineNumber <= p.LineNumber && d.Value.EndLineNumber >= p.LineNumber
-                                  select d.Value).FirstOrDefault();
-        if (dec != null)
+        KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
+                                                        where d.Value.StartLineNumber <= p.LineNumber && d.Value.EndLineNumber >= p.LineNumber
+                                                        select d).FirstOrDefault();
+        if (!string.IsNullOrEmpty(dec.Key))
         {
+            BlazorMonaco.Range decRange = dec.Value;
             TextModel sourceModel = await _editorSource.GetModel();
-            string tag = await sourceModel.GetValueInRange(dec, EndOfLinePreference.CRLF);
+            string tag = await sourceModel.GetValueInRange(decRange, EndOfLinePreference.CRLF);
             if (newTagVal)
             {
                 XmlDocument node = new XmlDocument();
-                bool emptyTag = tag.IndexOf("/>") != -1 ;
+                bool emptyTag = tag.IndexOf("/>") != -1;
                 if (emptyTag) node.LoadXml(tag);
                 else node.LoadXml($"{tag}</{AppState.tagName}>");
                 foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
@@ -149,6 +150,8 @@
             {//insert at cursor
                 await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.CloseTag));
             }
+
+            await Helpers.ColorToDone(dec.Key, dec.Value, _editorSource);
         }
     }
 
@@ -184,7 +187,7 @@
     {
         await js.InvokeVoidAsync("registerResize");
         var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
-        //decorationIdsSource = await DisplayDecoration(_editorSource, 4);
+        //sourceDecorations = await DisplayDecoration(_editorSource, 4);
         // You can now use 'decorationIds' to change or remove the decorations
     }
 
@@ -336,8 +339,8 @@
     //            Options = new ModelDecorationOptions
     //            {
     //                IsWholeLine = true,
-    //                ClassName = "decorationContentClass",
-    //                GlyphMarginClassName = "decorationGlyphMarginClass"
+    //                ClassName = "decorationContent",
+    //                GlyphMarginClassName = "decorationGlyphMargin"
     //            }
     //        }
     //                                                                                                                                                    };
