@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -7,8 +9,14 @@ namespace TeiEditor
 {
     public enum enmX2XMode
     {
+        [Display(Name = "None")]
+        [Description("None")]
         None = 0,
+        [Display(Name = "CopyTagWithAttribs")]
+        [Description("Copy tag with attributes")]
         CopyTagWithAttribs = 1,
+        [Display(Name = "CopyTagWithNewAttribs")]
+        [Description("Copy tag with new attribute")]
         CopyTagWithNewAttribs = 2
 
     }

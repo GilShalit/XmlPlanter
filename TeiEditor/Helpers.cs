@@ -26,6 +26,40 @@ namespace TeiEditor
 
     public static class Helpers
     {
+        public static async Task markTags(MonacoEditor editor, string tag, 
+            List<FindMatch> sourceMatches,
+            Dictionary<string, BlazorMonaco.Range> decorationIdsSource)
+        {
+            TextModel sourceModel = await editor.GetModel();
+            await editor.ResetDeltaDecorations();
+            List<ModelDeltaDecoration> lstDecorations = new List<ModelDeltaDecoration>();
+            sourceMatches = await sourceModel.FindMatches($"<{tag}", false, false, false, null, true, 10000);
+            if (sourceMatches.Count > 0)
+            {
+                foreach (FindMatch m in sourceMatches)
+                {
+                    m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel);
+                    lstDecorations.Add(new ModelDeltaDecoration
+                    {
+                        Range = m.Range,
+                        Options = new ModelDecorationOptions
+                        {
+                            IsWholeLine = false,
+                            ClassName = "decorationContentClass",
+                            GlyphMarginClassName = "decorationGlyphMarginClass",
+                            Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline, Color = "#90EE90" }
+                        }
+                    });
+                }
+                string[] decorations = await editor.DeltaDecorations(null, lstDecorations.ToArray());
+                for (int i = 0; i < sourceMatches.Count; i++)
+                {
+                    decorationIdsSource.Add(decorations[i], sourceMatches[i].Range);
+                }
+                await editor.RevealLineInCenter(sourceMatches[0].Range.StartLineNumber);
+            }
+        }
+
         public static JsonElement TagToJson(string Text, enmTagChanges tagChange)
         {
             switch (tagChange)

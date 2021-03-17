@@ -19,7 +19,7 @@
                 </div>
                 <div class="col-5" style="padding-top:3px!important">@lblSource</div>
                 <div class="col-3">
-                    <button @onclick="test" class="myButton">Mark</button>
+                    <button @onclick="markTags" class="myButton">Mark</button>
                 </div>
             </div>
             <div class="row">
@@ -66,39 +66,12 @@
     static private List<string> validationErrors = new List<string>();
     List<FindMatch> sourceMatches { get; set; }
 
-    private async Task test()
+    private async Task markTags()
     {
         AppState.isWorking();
         await Task.Delay(1);
 
-        TextModel sourceModel = await _editorSource.GetModel();
-        await _editorSource.ResetDeltaDecorations();
-        List<ModelDeltaDecoration> lstDecorations = new List<ModelDeltaDecoration>();
-        sourceMatches = await sourceModel.FindMatches($"<{AppState.tagName}", false, false, false, null, true, 10000);
-        if (sourceMatches.Count > 0)
-        {
-            foreach (FindMatch m in sourceMatches)
-            {
-                m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel);
-                lstDecorations.Add(new ModelDeltaDecoration
-                {
-                    Range = m.Range,
-                    Options = new ModelDecorationOptions
-                    {
-                        IsWholeLine = false,
-                        ClassName = "decorationContentClass",
-                        GlyphMarginClassName = "decorationGlyphMarginClass",
-                        Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline, Color = "#90EE90" }
-                    }
-                });
-            }
-            string[] decorations = await _editorSource.DeltaDecorations(null, lstDecorations.ToArray());
-            for (int i = 0; i < sourceMatches.Count; i++)
-            {
-                decorationIdsSource.Add(decorations[i], sourceMatches[i].Range);
-            }
-            await _editorSource.RevealLineInCenter(sourceMatches[0].Range.StartLineNumber);
-        }
+        await Helpers.markTags(_editorSource, AppState.tagName, sourceMatches, decorationIdsSource);
 
         AppState.notWorking();
     }

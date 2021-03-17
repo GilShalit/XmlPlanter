@@ -30,4 +30,6 @@
     <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
   </ItemGroup>
 
+  <ProjectExtensions><VisualStudio><UserProperties BuildVersion_BuildVersioningStyle="Increment.Increment.Increment.Increment" BuildVersion_StartDate="2000/1/1" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_UpdateFileVersion="True" /></VisualStudio></ProjectExtensions>
+
 </Project>
