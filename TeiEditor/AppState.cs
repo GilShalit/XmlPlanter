@@ -26,6 +26,7 @@ namespace TeiEditor
         public string hiddenClass { get; private set; }
         public string tagName { get; set; }
         public string attribName { get; set; }
+        public int attribStartVal { get; set; }
         public enmX2XMode X2XMode { get; set; }
         private int count;
 
@@ -38,6 +39,8 @@ namespace TeiEditor
 
             tagName = "seg";
             attribName = "xml:id";
+            attribStartVal = 1;
+            
             X2XMode = enmX2XMode.None;
         }
 

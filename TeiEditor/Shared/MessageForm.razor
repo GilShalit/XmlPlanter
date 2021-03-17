@@ -24,6 +24,10 @@
         <label for="Attribute">Attribute Name</label>
         <input @bind="Attribute" type="text" class="form-control" id="attribute" placeholder="Attribute to work on" />
     </div>
+    <div class="form-group @attribStartHidden">
+        <label for="attribStartVal">New Attribute Start Value</label>
+        <input @bind="attribStartVal" type="text" class="form-control" id="attributeStart" placeholder="New Attribute start value" />
+    </div>
 
     <button @onclick="SubmitForm" class="btn btn-primary">Submit</button>
     <button @onclick="Cancel" class="btn btn-secondary">Cancel</button>
@@ -35,6 +39,12 @@
 
     string Tag { get; set; }
     string Attribute { get; set; }
+    public int attribStartVal { get; set; }
+    string TagHidden { get; set; }
+    string AttributeHidden { get; set; }
+    public string attribStartHidden { get; set; }
+
+
     enmX2XMode _X2XMode;
     enmX2XMode X2XMode
     {
@@ -48,29 +58,30 @@
                     AppState.X2XMode = enmX2XMode.None;
                     TagHidden = "hidden";
                     AttributeHidden = "hidden";
+                    attribStartHidden = "hidden";
                     break;
                 case "CopyTagWithAttribs":
                     AppState.X2XMode = enmX2XMode.CopyTagWithAttribs;
                     TagHidden = "";
                     AttributeHidden = "hidden";
+                    attribStartHidden = "hidden";
                     break;
                 case "CopyTagWithNewAttribs":
                     AppState.X2XMode = enmX2XMode.CopyTagWithNewAttribs;
                     TagHidden = "";
                     AttributeHidden = "";
+                    attribStartHidden = "";
                     break;
             }
         }
     }
-
-    string TagHidden { get; set; }
-    string AttributeHidden { get; set; }
 
     protected override void OnInitialized()
     {
         //BlazoredModal.SetTitle("Enter a Message");
         Tag = AppState.tagName;
         Attribute = AppState.attribName;
+        attribStartVal = AppState.attribStartVal;
         X2XMode = AppState.X2XMode;
     }
 
@@ -78,6 +89,7 @@
     {
         AppState.tagName = Tag;
         AppState.attribName = Attribute;
+        AppState.attribStartVal = attribStartVal;
         AppState.X2XMode = (enmX2XMode)X2XMode;
         //        await BlazoredModal.CloseAsync(ModalResult.Ok(Tag));
         await BlazoredModal.CloseAsync();

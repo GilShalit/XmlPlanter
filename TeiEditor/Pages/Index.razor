@@ -118,6 +118,51 @@
             {//insert at cursor
                 await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.CloseTag));
             }
+        }
+    }
+
+    private async void CopyTagWNew()
+    {
+        Position p = await _editorSource.GetPosition();
+        //int line = p.LineNumber;
+
+        BlazorMonaco.Range dec = (from d in decorationIdsSource
+                                  where d.Value.StartLineNumber <= p.LineNumber && d.Value.EndLineNumber >= p.LineNumber
+                                  select d.Value).FirstOrDefault();
+        if (dec != null)
+        {
+            TextModel sourceModel = await _editorSource.GetModel();
+            string tag = await sourceModel.GetValueInRange(dec, EndOfLinePreference.CRLF);
+
+            Selection targetSel = await _editorTarget.GetSelection();
+            Position targetStartPos = new Position()
+            {
+
+                Column = targetSel.StartColumn,
+                LineNumber = targetSel.StartLineNumber,
+            };
+            Position targetEndPos = new Position()
+            {
+                Column = targetSel.EndColumn,
+                LineNumber = targetSel.EndLineNumber
+            };
+            if (targetStartPos.LineNumber == targetEndPos.LineNumber)
+            {
+                targetEndPos.Column += tag.Length;
+            }
+
+            if (targetSel.StartLineNumber != targetSel.EndLineNumber || targetSel.StartColumn != targetSel.EndColumn)
+            {//a range is selected
+                await _editorTarget.SetPosition(targetStartPos);
+                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.OpenTag));
+
+                await _editorTarget.SetPosition(targetEndPos);
+                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson($"</{AppState.tagName}>", enmTagChanges.DoNothing));
+            }
+            else
+            {//insert at cursor
+                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.CloseTag));
+            }
 
             // !!! use this to find and replace attribute values
             //XmlDocument node = new XmlDocument();
@@ -145,7 +190,7 @@
         await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", schemaSet, _client);
         await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", schemaSet, _client);
         await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", schemaSet, _client);
-        await AddCopyTagAction();
+        await AddCopyTagActions();
 
         AppState.notWorking();
     }
@@ -206,12 +251,14 @@
 
     //}
 
-    private async Task AddCopyTagAction()
+    private async Task AddCopyTagActions()
     {//https://stackoverflow.com/questions/64057359/difference-between-editor-addaction-and-editor-addcommand-and-their-use-case
         await _editorSource.AddAction("CopyTag", "Copy Tag with Attributes",
             new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_T },
-            null, null, "navigation", 1.5, (editor, keyCodes) => CopyTag()
-);
+            null, null, "navigation", 1.5, (editor, keyCodes) => CopyTag());
+        await _editorSource.AddAction("CopyTagWNewAttrib", "Copy Tag with New Attribute",
+            new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_N },
+            null, null, "navigation", 1.5, (editor, keyCodes) => CopyTagWNew());
     }
 
     private async Task ValidateXML()
