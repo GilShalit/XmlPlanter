@@ -76,11 +76,28 @@
         AppState.notWorking();
     }
 
-    private async void CopyTag()
+    private async Task CopyTag(bool newTagVal = false)
     {
-        Position p = await _editorSource.GetPosition();
-        //int line = p.LineNumber;
+        string msg = "";
+        switch (AppState.X2XMode)
+        {
+            case enmX2XMode.None:
+                msg = "Please select mode in configuration";
+                break;
+            case enmX2XMode.CopyTagWithAttribs:
+                if (newTagVal) msg = "Mode is not 'Copy tag with NEW attribute'";
+                break;
+            case enmX2XMode.CopyTagWithNewAttribs:
+                if (!newTagVal) msg = "Mode is 'Copy tag with NEW attribute'";
+                break;
+        }
+        if (msg != "")
+        {
+            Helpers.ShowModal(msg, Modal);
+            return;
+        }
 
+        Position p = await _editorSource.GetPosition();
         BlazorMonaco.Range dec = (from d in decorationIdsSource
                                   where d.Value.StartLineNumber <= p.LineNumber && d.Value.EndLineNumber >= p.LineNumber
                                   select d.Value).FirstOrDefault();
@@ -88,6 +105,20 @@
         {
             TextModel sourceModel = await _editorSource.GetModel();
             string tag = await sourceModel.GetValueInRange(dec, EndOfLinePreference.CRLF);
+            if (newTagVal)
+            {
+                XmlDocument node = new XmlDocument();
+                bool emptyTag = tag.IndexOf("/>") != -1 ;
+                if (emptyTag) node.LoadXml(tag);
+                else node.LoadXml($"{tag}</{AppState.tagName}>");
+                foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
+                {
+                    if (attrb.Name == AppState.attribName) attrb.Value = (AppState.attribStartVal++).ToString();
+                }
+                if (emptyTag) tag = node.OuterXml;
+                else tag = node.OuterXml.Substring(0, node.OuterXml.IndexOf("</"));
+            }
+
 
             Selection targetSel = await _editorTarget.GetSelection();
             Position targetStartPos = new Position()
@@ -123,53 +154,7 @@
 
     private async void CopyTagWNew()
     {
-        Position p = await _editorSource.GetPosition();
-        //int line = p.LineNumber;
-
-        BlazorMonaco.Range dec = (from d in decorationIdsSource
-                                  where d.Value.StartLineNumber <= p.LineNumber && d.Value.EndLineNumber >= p.LineNumber
-                                  select d.Value).FirstOrDefault();
-        if (dec != null)
-        {
-            TextModel sourceModel = await _editorSource.GetModel();
-            string tag = await sourceModel.GetValueInRange(dec, EndOfLinePreference.CRLF);
-
-            Selection targetSel = await _editorTarget.GetSelection();
-            Position targetStartPos = new Position()
-            {
-
-                Column = targetSel.StartColumn,
-                LineNumber = targetSel.StartLineNumber,
-            };
-            Position targetEndPos = new Position()
-            {
-                Column = targetSel.EndColumn,
-                LineNumber = targetSel.EndLineNumber
-            };
-            if (targetStartPos.LineNumber == targetEndPos.LineNumber)
-            {
-                targetEndPos.Column += tag.Length;
-            }
-
-            if (targetSel.StartLineNumber != targetSel.EndLineNumber || targetSel.StartColumn != targetSel.EndColumn)
-            {//a range is selected
-                await _editorTarget.SetPosition(targetStartPos);
-                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.OpenTag));
-
-                await _editorTarget.SetPosition(targetEndPos);
-                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson($"</{AppState.tagName}>", enmTagChanges.DoNothing));
-            }
-            else
-            {//insert at cursor
-                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.CloseTag));
-            }
-
-            // !!! use this to find and replace attribute values
-            //XmlDocument node = new XmlDocument();
-            //node.LoadXml($"{tag}</{tagName}>");
-            //string s = node.DocumentElement.Attributes[0].Value;
-
-        }
+        await CopyTag(newTagVal: true);
     }
 
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
@@ -213,7 +198,9 @@
     }
 
     private void OnContextMenuSource(EditorMouseEvent eventArg)
-    {
+    {// To disable menu options according to mode:
+     // https://stackoverflow.com/questions/62001650/how-to-open-context-menu-in-monaco-editor-based-on-line-content-in-angular
+     // requires an implementation of MonacoEditorBase.createContextKey
         Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
     }
 
@@ -252,7 +239,9 @@
     //}
 
     private async Task AddCopyTagActions()
-    {//https://stackoverflow.com/questions/64057359/difference-between-editor-addaction-and-editor-addcommand-and-their-use-case
+    {
+        //https://stackoverflow.com/questions/64057359/difference-between-editor-addaction-and-editor-addcommand-and-their-use-case
+        //
         await _editorSource.AddAction("CopyTag", "Copy Tag with Attributes",
             new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_T },
             null, null, "navigation", 1.5, (editor, keyCodes) => CopyTag());

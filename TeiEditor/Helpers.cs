@@ -65,7 +65,7 @@ namespace TeiEditor
             switch (tagChange)
             {
                 case enmTagChanges.OpenTag:
-                    Text = Text.Replace("/>", ">").Replace("/ >", ">");
+                    Text = Text.Replace("/>", ">");
                     break;
                 case enmTagChanges.CloseTag:
                     if (Text.IndexOf("/") == -1) Text = Text.Replace(">", "/>");
