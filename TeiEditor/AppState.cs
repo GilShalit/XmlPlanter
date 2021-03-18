@@ -41,7 +41,7 @@ namespace TeiEditor
             attribName = "xml:id";
             attribStartVal = 1;
             
-            X2XMode = enmX2XMode.None;
+            X2XMode = enmX2XMode.CopyTagWithAttribs;
         }
 
         public void isWorking()

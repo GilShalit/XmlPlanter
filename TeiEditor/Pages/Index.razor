@@ -109,7 +109,7 @@
             if (newTagVal)
             {
                 XmlDocument node = new XmlDocument();
-                bool emptyTag = tag.IndexOf("/>") != -1;
+                bool emptyTag = Helpers.IsClosedTag(tag);
                 if (emptyTag) node.LoadXml(tag);
                 else node.LoadXml($"{tag}</{AppState.tagName}>");
                 foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
@@ -138,20 +138,35 @@
                 targetEndPos.Column += tag.Length;
             }
 
+            ///insert tag on target
             if (targetSel.StartLineNumber != targetSel.EndLineNumber || targetSel.StartColumn != targetSel.EndColumn)
             {//a range is selected
                 await _editorTarget.SetPosition(targetStartPos);
                 await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.OpenTag));
 
+                string endTag = $"</{AppState.tagName}>";
                 await _editorTarget.SetPosition(targetEndPos);
-                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson($"</{AppState.tagName}>", enmTagChanges.DoNothing));
+                await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(endTag, enmTagChanges.DoNothing));
+
+                if (targetStartPos.LineNumber == targetEndPos.LineNumber)
+                {// adding on one line, need to take into acount both opening and closing tags
+                    if (!Helpers.IsClosedTag(tag)) targetSel.EndColumn += tag.Length;// add opening tag
+                    else targetSel.EndColumn += tag.Length - 1;//opening tag removes '/'
+                }
+                targetSel.EndColumn += endTag.Length;//always add closing tag
             }
             else
             {//insert at cursor
                 await _editorTarget.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.CloseTag));
+                if (tag.IndexOf("/>") != -1) targetSel.EndColumn += tag.Length;//for painting target
+                else targetSel.EndColumn += tag.Length + 1;//closing tag adds '/'
             }
 
-            await Helpers.ColorToDone(dec.Key, dec.Value, _editorSource);
+            //paint source for done
+            await Helpers.ColorToDone(_editorSource, dec.Value, dec.Key);
+
+            //paint target for done
+            await Helpers.ColorToDone(_editorTarget, targetSel);
         }
     }
 

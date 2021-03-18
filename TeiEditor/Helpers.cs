@@ -19,14 +19,20 @@ namespace TeiEditor
 {
     public enum enmTagChanges
     {
-        DoNothing=0,
+        DoNothing = 0,
         OpenTag,
         CloseTag
     }
 
     public static class Helpers
     {
-        public static async Task markTags(MonacoEditor editor, string tag, 
+        public static bool IsClosedTag(string tag)
+        {
+            return tag.IndexOf("/>") != -1;
+
+        }
+
+        public static async Task markTags(MonacoEditor editor, string tag,
             List<FindMatch> sourceMatches,
             Dictionary<string, BlazorMonaco.Range> sourceDecorations)
         {
@@ -47,7 +53,7 @@ namespace TeiEditor
                             IsWholeLine = false,
                             ClassName = "decorationContent",
                             GlyphMarginClassName = "decorationGlyphMargin",
-                            Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline , Color = "#FFFF00" }//#90EE90 #FFFFFE
+                            Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline, Color = "#FFFF00" }//#90EE90 #FFFFFE
                         }
                     });
                 }
@@ -60,9 +66,14 @@ namespace TeiEditor
             }
         }
 
-        public static async Task ColorToDone(string id ,BlazorMonaco.Range range,MonacoEditor editor)
+        public static async Task ColorToDone(MonacoEditor editor, BlazorMonaco.Range range, string id = "")
         {
-            string[] targetID = new string[] { id };
+            string[] targetID = new string[] { };
+            if (!string.IsNullOrEmpty(id))
+            {
+                targetID = new string[] { id };
+            }
+             
             List<ModelDeltaDecoration> newDec = new List<ModelDeltaDecoration>(){
                 new ModelDeltaDecoration
                 {
@@ -94,7 +105,7 @@ namespace TeiEditor
                     break;
             }
             Text = Text.Replace("\"", "\\\"");
-            var t= $"{{\"text\": \"{Text}\"}}";
+            var t = $"{{\"text\": \"{Text}\"}}";
             JsonDocument doc;
             doc = JsonDocument.Parse(t);
             return doc.RootElement;
@@ -109,7 +120,7 @@ namespace TeiEditor
 
             int tagCloseLine = matchRange.EndLineNumber;
             string line = await model.GetLineContent(tagCloseLine);
-            int tagCloseCol = line.IndexOf(">",matchRange.EndColumn-1);
+            int tagCloseCol = line.IndexOf(">", matchRange.EndColumn - 1);
             if (tagCloseCol == -1) //not found
             {
                 tagCloseLine++;
