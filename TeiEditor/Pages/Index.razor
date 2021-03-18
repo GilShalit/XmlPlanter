@@ -100,7 +100,7 @@
             return;
         }
 
-        KeyValuePair<string, BlazorMonaco.Range> dec =currentDec;
+        KeyValuePair<string, BlazorMonaco.Range> dec = currentDec;
         if (!string.IsNullOrEmpty(dec.Key))
         {
             BlazorMonaco.Range decRange = dec.Value;
@@ -247,8 +247,11 @@
             {
                 TextModel sourceModel = await _editorSource.GetModel();
                 string tag = await sourceModel.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
-                if (Helpers.IsClosedTag(tag)) return;
-                Position pEnd = await Helpers.getEndOfTag(AppState.tagName, dec.Value, sourceModel);
+
+                Position pEnd;
+                if (Helpers.IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
+                else pEnd = await Helpers.getEndOfTag(AppState.tagName, dec.Value, sourceModel);
+
                 BlazorMonaco.Range range = new BlazorMonaco.Range()
                 {
                     StartColumn = dec.Value.StartColumn,

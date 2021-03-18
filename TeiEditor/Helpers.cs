@@ -34,18 +34,17 @@ namespace TeiEditor
     {
         public static async Task<Position> getEndOfTag(string tagName, BlazorMonaco.Range tagRange, TextModel model)
         {
-            //gets here only for non empty tags
             string endTag = $"</{tagName}>";
             int l = tagRange.EndLineNumber;
             List<string> lines = await model.GetLinesContent();
             int endTagCol = -1;
             while (l < lines.Count)
             {
-                endTagCol = lines[l].IndexOf(endTag);
+                endTagCol = lines[l - 1].IndexOf(endTag);
                 if (endTagCol > -1) break;
                 l++;
             }
-            return new Position() { Column = endTagCol + endTag.Length + 1, LineNumber = l + 1 };
+            return new Position() { Column = endTagCol + endTag.Length + 1, LineNumber = l  };
         }
 
         public static bool IsClosedTag(string tag)
