@@ -55,12 +55,22 @@ a, .btn-link {
 
 .decorationGlyphMarginDone {
     background: lightgreen;
-    border-radius:10px;
-    margin-left:2px!important;
+    border-radius: 10px;
+    margin-left: 2px !important;
 }
 
 .decorationContentDone {
     background: lightgreen;
+}
+
+.decorationGlyphMarginCurrent {
+    background: #bbfaf9;
+    border-radius: 10px;
+    margin-left: 2px !important;
+}
+
+.decorationContentCurrent {
+    background: #bbfaf9;
 }
 
 .decorationGlyphMargin {
@@ -129,6 +139,7 @@ a, .btn-link {
     text-decoration: underline!important;
     font-weight: 600;
 }
+
 .nav-link-selected:hover {
     text-decoration: underline!important;
     font-weight: 600;

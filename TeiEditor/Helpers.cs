@@ -24,12 +24,33 @@ namespace TeiEditor
         CloseTag
     }
 
+    public enum enmStatusColor
+    {
+        Done = 0,
+        Current = 1
+    }
+
     public static class Helpers
     {
+        public static async Task<Position> getEndOfTag(string tagName, BlazorMonaco.Range tagRange, TextModel model)
+        {
+            //gets here only for non empty tags
+            string endTag = $"</{tagName}>";
+            int l = tagRange.EndLineNumber;
+            List<string> lines = await model.GetLinesContent();
+            int endTagCol = -1;
+            while (l < lines.Count)
+            {
+                endTagCol = lines[l].IndexOf(endTag);
+                if (endTagCol > -1) break;
+                l++;
+            }
+            return new Position() { Column = endTagCol + endTag.Length + 1, LineNumber = l + 1 };
+        }
+
         public static bool IsClosedTag(string tag)
         {
             return tag.IndexOf("/>") != -1;
-
         }
 
         public static async Task markTags(MonacoEditor editor, string tag,
@@ -66,14 +87,39 @@ namespace TeiEditor
             }
         }
 
-        public static async Task ColorToDone(MonacoEditor editor, BlazorMonaco.Range range, string id = "")
+        public static async Task RemoveDecoration(MonacoEditor editor, string id)
         {
+            string[] targetID = new string[] { id };
+            List<ModelDeltaDecoration> emptyDec = new List<ModelDeltaDecoration>() { };
+            await editor.DeltaDecorations(targetID, emptyDec.ToArray());
+        }
+
+        public static async Task<string> ColorRange(MonacoEditor editor, BlazorMonaco.Range range, string id = "", enmStatusColor statusColor = enmStatusColor.Done)
+        {
+            string contentClass = "";
+            string GlyphMarginClass = "";
+            string MiniMapColor = "";
+
+            switch (statusColor)
+            {
+                case enmStatusColor.Done:
+                    contentClass = "decorationContentDone";
+                    GlyphMarginClass = "decorationGlyphMarginDone";
+                    MiniMapColor = "#90EE90";
+                    break;
+                case enmStatusColor.Current:
+                    contentClass = "decorationContentCurrent";
+                    GlyphMarginClass = "decorationGlyphMarginCurrent";
+                    MiniMapColor = "#bbfaf9";
+                    break;
+            }
+
             string[] targetID = new string[] { };
             if (!string.IsNullOrEmpty(id))
             {
                 targetID = new string[] { id };
             }
-             
+
             List<ModelDeltaDecoration> newDec = new List<ModelDeltaDecoration>(){
                 new ModelDeltaDecoration
                 {
@@ -81,14 +127,14 @@ namespace TeiEditor
                     Options = new ModelDecorationOptions
                     {
                         IsWholeLine = false,
-                        ClassName = "decorationContentDone",
-                        GlyphMarginClassName = "decorationGlyphMarginDone",
-                        Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline, Color = "#90EE90" }
+                        ClassName = contentClass,
+                        GlyphMarginClassName = GlyphMarginClass,
+                        Minimap = new ModelDecorationMinimapOptions() { Position = MinimapPosition.Inline, Color = MiniMapColor }
                     }
                 } };
 
             string[] decorations = await editor.DeltaDecorations(targetID, newDec.ToArray());
-
+            return decorations[0];
         }
 
         public static JsonElement TagToJson(string Text, enmTagChanges tagChange)

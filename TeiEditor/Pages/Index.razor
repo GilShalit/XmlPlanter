@@ -24,7 +24,8 @@
             </div>
             <div class="row">
                 <div class="col" style="padding-left:0!important;">
-                    <MonacoEditor @ref="_editorSource" Id="editor-source" ConstructionOptions="EditorConstructionOptions" OnDidInit="OnDidInitSource" OnContextMenu="OnContextMenuSource" />
+                    <MonacoEditor @ref="_editorSource" Id="editor-source" ConstructionOptions="EditorConstructionOptions"
+                                  OnDidInit="OnDidInitSource" OnContextMenu="OnContextMenuSource" OnMouseDown="onMouseDownSource" />
                 </div>
             </div>
         </div>
@@ -65,6 +66,7 @@
     [CascadingParameter] public IModalService Modal { get; set; }
     static private List<string> validationErrors = new List<string>();
     List<FindMatch> sourceMatches { get; set; }
+    string currentRangeId = "";
 
     private async Task markTags()
     {
@@ -163,10 +165,10 @@
             }
 
             //paint source for done
-            await Helpers.ColorToDone(_editorSource, dec.Value, dec.Key);
+            await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
 
             //paint target for done
-            await Helpers.ColorToDone(_editorTarget, targetSel);
+            await Helpers.ColorRange(_editorTarget, targetSel);
         }
     }
 
@@ -222,12 +224,41 @@
     }
 
     private void OnContextMenuSource(EditorMouseEvent eventArg)
-    {// To disable menu options according to mode:
-     // https://stackoverflow.com/questions/62001650/how-to-open-context-menu-in-monaco-editor-based-on-line-content-in-angular
-     // requires an implementation of MonacoEditorBase.createContextKey
+    {
+        // To disable menu options according to mode:
+        // https://stackoverflow.com/questions/62001650/how-to-open-context-menu-in-monaco-editor-based-on-line-content-in-angular
+        // requires an implementation of MonacoEditorBase.createContextKey
         Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
     }
 
+    private async void onMouseDownSource(EditorMouseEvent eventArg)
+    {
+        if (eventArg.Event.LeftButton)
+        {
+            Position pClick = eventArg.Target.Position;
+            KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
+                                                            where d.Value.StartLineNumber <= pClick.LineNumber && d.Value.EndLineNumber >= pClick.LineNumber
+                                                            select d).FirstOrDefault();
+
+            if (string.IsNullOrEmpty(dec.Key)) await Helpers.RemoveDecoration(_editorSource, currentRangeId);
+            else
+            {
+                TextModel sourceModel = await _editorSource.GetModel();
+                string tag = await sourceModel.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
+                if (Helpers.IsClosedTag(tag)) return;
+                Position pEnd = await Helpers.getEndOfTag(AppState.tagName, dec.Value, sourceModel);
+                BlazorMonaco.Range range = new BlazorMonaco.Range()
+                {
+                    StartColumn = dec.Value.StartColumn,
+                    StartLineNumber = dec.Value.StartLineNumber,
+                    EndColumn = pEnd.Column,
+                    EndLineNumber = pEnd.LineNumber
+                };
+                currentRangeId = await Helpers.ColorRange(_editorSource, range, currentRangeId, enmStatusColor.Current);
+            }
+
+        }
+    }
     private void OnContextMenuTarget(EditorMouseEvent eventArg)
     {
         Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
@@ -256,11 +287,6 @@
         }
         lTargetLines = await Helpers.LoadXMLfromFile(_editorTarget, e.File);
     }
-
-    //private void onDidChangeCursorSelectionTarget(CursorSelectionChangedEvent eventArgs)
-    //{
-
-    //}
 
     private async Task AddCopyTagActions()
     {
@@ -346,25 +372,6 @@
 
         byte[] file = System.Text.Encoding.UTF8.GetBytes(await _editorTarget.GetValue());
         await js.InvokeVoidAsync("BlazorDownloadFile", lblTarget, "text/xml", file);
-
-
     }
 
-    //private async Task<string[]> DisplayDecoration(MonacoEditor editor, int iRow)
-    //{
-    //    var newDecorations = new ModelDeltaDecoration[]
-    //    {
-    //        new ModelDeltaDecoration
-    //        {
-    //            Range = new BlazorMonaco.Range(iRow,1,iRow,3),
-    //            Options = new ModelDecorationOptions
-    //            {
-    //                IsWholeLine = true,
-    //                ClassName = "decorationContent",
-    //                GlyphMarginClassName = "decorationGlyphMargin"
-    //            }
-    //        }
-    //                                                                                                                                                    };
-    //    return await editor.DeltaDecorations(null, newDecorations);
-    //}
 }
