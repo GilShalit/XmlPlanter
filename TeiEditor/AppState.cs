@@ -44,6 +44,7 @@ namespace TeiEditor
             X2XMode = enmX2XMode.CopyTagWithAttribs;
         }
 
+
         public void isWorking()
         {
             count = count + 1;
