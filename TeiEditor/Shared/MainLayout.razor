@@ -11,11 +11,11 @@
         <div class="top-row px-4" id="navTop">
 
             <img id="gifWorking" src="images/working.gif" class="workingGif @AppState.hiddenClass" />
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <NavLink id="mainNav" class="nav-link nav-link-selected" href="" Match="NavLinkMatch.All">
                 Xml2Xml
             </NavLink>
-            <NavLink class="nav-link disabled" href="">
-                Xml2Tsv2Xmlxyz
+            <NavLink id="X2T2XNav"class="nav-link" href="X2T2X">
+                Xml2Tsv2Xml
             </NavLink>            
             <button class="btn btn-primary" @onclick="getConfig">Configuration</button>
             @*<div style="margin:5px 10px 5px 10px;">

@@ -188,6 +188,7 @@
     protected async override void OnInitialized()
     {
         AppState.isWorking();
+
         //load schemaSet for validation
         await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0", schemaSet, _client);
         await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", schemaSet, _client);
@@ -196,6 +197,11 @@
         await AddCopyTagActions();
 
         AppState.notWorking();
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) await js.InvokeVoidAsync("showCurrentNav", "mainNav");
     }
 
     private async Task OnDidInitSource(MonacoEditorBase editor)

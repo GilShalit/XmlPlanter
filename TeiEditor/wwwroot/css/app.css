@@ -125,4 +125,11 @@ a, .btn-link {
         border-color: blue;
     }
 
-
+.nav-link-selected {
+    text-decoration: underline!important;
+    font-weight: 600;
+}
+.nav-link-selected:hover {
+    text-decoration: underline!important;
+    font-weight: 600;
+}

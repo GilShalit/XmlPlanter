@@ -1,0 +1,32 @@
+﻿@page "/X2T2X"
+
+@using System.IO
+@using System.Net.Http
+@using System.Text
+@using System.Xml;
+@using System.Xml.Schema;
+
+@inject IJSRuntime js
+@inject HttpClient _client
+@inject AppState AppState
+<div class="container-fluid">
+    <div class="row w-100">
+        <div class="col">
+        </div>
+    </div>
+</div>
+@code {
+    protected async override void OnInitialized()
+    {
+//        AppState.isWorking();
+
+
+        //AppState.notWorking();
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        await js.InvokeVoidAsync("showCurrentNav", "X2T2XNav");
+    }
+
+}

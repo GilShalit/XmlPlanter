@@ -1,4 +1,14 @@
-﻿window.isChrome = function () {
+﻿function showCurrentNav(currentID) {
+    let navElements = document.getElementsByClassName('nav-link');
+    for (var i = 0, len = navElements.length | 0; i < len; i = i + 1 | 0) {
+        let el = navElements[i];
+        el.classList.remove('nav-link-selected');
+    }
+    var current = document.getElementById(currentID);
+    current.classList.add('nav-link-selected');
+}
+
+window.isChrome = function () {
     const ua = navigator.userAgent;
     return ua.indexOf('Chrome') 
 }
