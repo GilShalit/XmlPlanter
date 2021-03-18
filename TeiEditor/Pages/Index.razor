@@ -67,6 +67,7 @@
     static private List<string> validationErrors = new List<string>();
     List<FindMatch> sourceMatches { get; set; }
     string currentRangeId = "";
+    KeyValuePair<string, BlazorMonaco.Range> currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
 
     private async Task markTags()
     {
@@ -99,10 +100,7 @@
             return;
         }
 
-        Position p = await _editorSource.GetPosition();
-        KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
-                                                        where d.Value.StartLineNumber <= p.LineNumber && d.Value.EndLineNumber >= p.LineNumber
-                                                        select d).FirstOrDefault();
+        KeyValuePair<string, BlazorMonaco.Range> dec =currentDec;
         if (!string.IsNullOrEmpty(dec.Key))
         {
             BlazorMonaco.Range decRange = dec.Value;
@@ -240,7 +238,11 @@
                                                             where d.Value.StartLineNumber <= pClick.LineNumber && d.Value.EndLineNumber >= pClick.LineNumber
                                                             select d).FirstOrDefault();
 
-            if (string.IsNullOrEmpty(dec.Key)) await Helpers.RemoveDecoration(_editorSource, currentRangeId);
+            if (string.IsNullOrEmpty(dec.Key))
+            {
+                await Helpers.RemoveDecoration(_editorSource, currentRangeId);
+                currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
+            }
             else
             {
                 TextModel sourceModel = await _editorSource.GetModel();
@@ -255,6 +257,7 @@
                     EndLineNumber = pEnd.LineNumber
                 };
                 currentRangeId = await Helpers.ColorRange(_editorSource, range, currentRangeId, enmStatusColor.Current);
+                currentDec = dec;
             }
 
         }
@@ -292,10 +295,10 @@
     {
         //https://stackoverflow.com/questions/64057359/difference-between-editor-addaction-and-editor-addcommand-and-their-use-case
         //
-        await _editorSource.AddAction("CopyTag", "Copy Tag with Attributes",
+        await _editorTarget.AddAction("CopyTag", "Copy Tag with Attributes",
             new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_T },
             null, null, "navigation", 1.5, (editor, keyCodes) => CopyTag());
-        await _editorSource.AddAction("CopyTagWNewAttrib", "Copy Tag with New Attribute",
+        await _editorTarget.AddAction("CopyTagWNewAttrib", "Copy Tag with New Attribute",
             new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_N },
             null, null, "navigation", 1.5, (editor, keyCodes) => CopyTagWNew());
     }
