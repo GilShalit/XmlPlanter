@@ -60,10 +60,8 @@
     private string lblChooseSource = "Choose Source";
     private string lblTarget = "";
     private string lblChooseTarget = "Choose Target";
-    private XmlSchemaSet schemaSet = new XmlSchemaSet();
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
     [CascadingParameter] public IModalService Modal { get; set; }
-    static private List<string> validationErrors = new List<string>();
     List<FindMatch> sourceMatches { get; set; }
     string currentRangeId = "";
     KeyValuePair<string, BlazorMonaco.Range> currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
@@ -80,21 +78,21 @@
 
     protected async override void OnInitialized()
     {
-        Console.WriteLine("Initialized");
         AppState.isWorking();
+        await Task.Delay(1);
 
         AppState.PageMode = enmPage.X2X;
         AppState.OpMode = enmOpMode.CopyTagWithAttribs;
 
         //load schemaSet for validation
-        await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0", schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0", Helpers.schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", Helpers.schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", Helpers.schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", Helpers.schemaSet, _client);
+
         await AddCopyTagActions();
 
         AppState.notWorking();
-        Console.WriteLine("Initialized done");
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
@@ -213,45 +211,7 @@
 
     private async Task ValidateXML()
     {
-        try
-        {
-            AppState.isWorking();
-            validationErrors.Clear();
-            await Task.Delay(1);
-
-            byte[] byteArrayX = Encoding.ASCII.GetBytes(await _editorTarget.GetValue());
-            MemoryStream streamX = new MemoryStream(byteArrayX);
-            XmlReader reader = XmlReader.Create(streamX);
-
-            XmlDocument document = new XmlDocument();
-            document.Load(reader);
-            document.Schemas = schemaSet;
-
-            document.Validate(eventHandler);
-        }
-        catch (Exception e)
-        {
-            validationErrors.Add(e.Message);
-            //throw;
-        }
-        finally
-        {
-            AppState.notWorking();
-            ShowValModal();
-        }
-    }
-
-    void ShowValModal()
-    {
-        if (validationErrors.Count > 0)
-        {
-            string msg = "";
-            foreach (string s in validationErrors)
-            {
-                msg = msg + s + Environment.NewLine;
-            }
-            Helpers.ShowModal(msg, Modal);
-        }
+        await Helpers.ValidateXML(AppState, Modal, _editorTarget, eventHandler);
     }
 
     static void ValidationEventHandler(object sender, ValidationEventArgs e)
@@ -265,7 +225,7 @@
                 Console.WriteLine("Warning {0}", e.Message);
                 break;
         }
-        validationErrors.Add(e.Message);
+        Helpers.validationErrors.Add(e.Message);
     }
 
     private async Task Download()

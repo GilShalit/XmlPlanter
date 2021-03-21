@@ -29,7 +29,7 @@ window.resizeEditor = function (id) {
     console.log('resize ' + id);
     var sourceE = document.getElementById(id);
     var height = `${window.innerHeight - 150}px`;
-    var width = `${(window.innerWidth - 120) }px`;
+    var width = `${window.innerWidth - 120 }px`;
 
     //    console.log('h= ' + sourceE.style.height + ' w= ' +sourceE.style.width);
     sourceE.style.width = width;
@@ -59,6 +59,12 @@ window.registerResize = function () {
         //alert('Inside handler for resize event');
         resizeEditors('editor-source');
         resizeEditors('editor-target');
+    }
+}
+window.registerResize1 = function () {
+    window.onresize = function () {
+        //alert('Inside handler for resize event');
+        resizeEditor('editor-source');
     }
 }
 

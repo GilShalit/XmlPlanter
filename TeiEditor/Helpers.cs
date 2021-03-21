@@ -32,6 +32,11 @@ namespace TeiEditor
 
     public static class Helpers
     {
+        static public List<string> validationErrors = new List<string>();
+        static public XmlSchemaSet schemaSet = new XmlSchemaSet();
+
+
+
         public static async Task<Position> getEndOfTag(string tagName, BlazorMonaco.Range tagRange, TextModel model)
         {
             string endTag = $"</{tagName}>";
@@ -44,7 +49,7 @@ namespace TeiEditor
                 if (endTagCol > -1) break;
                 l++;
             }
-            return new Position() { Column = endTagCol + endTag.Length + 1, LineNumber = l  };
+            return new Position() { Column = endTagCol + endTag.Length + 1, LineNumber = l };
         }
 
         public static bool IsClosedTag(string tag)
@@ -195,6 +200,20 @@ namespace TeiEditor
             return lLines;
         }
 
+        public static void ShowValModal(IModalService Modal)
+        {
+            if (validationErrors.Count > 0)
+            {
+                string msg = "";
+                foreach (string s in Helpers.validationErrors)
+                {
+                    msg = msg + s + Environment.NewLine;
+                }
+                ShowModal(msg, Modal);
+            }
+            else ShowModal("XML is Valid", Modal);
+        }
+
         public static void ShowModal(string msg, IModalService Modal)
         {
             ModalOptions options = new ModalOptions() { HideCloseButton = true };
@@ -207,7 +226,38 @@ namespace TeiEditor
             //Console.WriteLine($"{path}: {byteArrayS.Length}");
             MemoryStream streamS = new MemoryStream(byteArrayS);
             XmlReader xmlSchemaReader = XmlReader.Create(streamS);
-            schemaSet.Add(nameSpace, xmlSchemaReader);
+            Helpers.schemaSet.Add(nameSpace, xmlSchemaReader);
+        }
+
+        public static async Task ValidateXML(AppState appState, IModalService Modal,
+            MonacoEditor editor, ValidationEventHandler eventHandler)
+        {
+            try
+            {
+                appState.isWorking();
+                Helpers.validationErrors.Clear();
+                await Task.Delay(1);
+
+                byte[] byteArrayX = Encoding.ASCII.GetBytes(await editor.GetValue());
+                MemoryStream streamX = new MemoryStream(byteArrayX);
+                XmlReader reader = XmlReader.Create(streamX);
+
+                XmlDocument document = new XmlDocument();
+                document.Load(reader);
+                document.Schemas = Helpers.schemaSet;
+
+                document.Validate(eventHandler);
+            }
+            catch (Exception e)
+            {
+                Helpers.validationErrors.Add(e.Message);
+                //throw;
+            }
+            finally
+            {
+                appState.notWorking();
+                ShowValModal(Modal);
+            }
         }
     }
 }

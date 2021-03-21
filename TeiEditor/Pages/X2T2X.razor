@@ -13,13 +13,23 @@
     <div class="row">
         <div class="col">
             <div class="row" style="margin-bottom:5px">
-                <div class="col-3 file-input-zone">
+                <div class="col-1 file-input-zone" style="padding-left:0;padding-right:0">
                     <InputFile OnChange="@OnSourceFileChange" accept=".xml" />
                     @lblChooseSource
                 </div>
-                <div class="col-5" style="padding-top:3px!important">@lblSource</div>
+                <div class="col-3" style="padding-top:3px!important">@lblSource</div>
+                <div class="col-1 file-input-zone" style="padding-left:0;padding-right:0">
+                    <InputFile OnChange="@OnLookupFileChange" accept=".xml" />
+                    @lblChooseLookup
+                </div>
+                <div class="col-3" style="padding-top:3px!important">@lblLookup</div>
+
+                <div class="col-1">
+                    <button @onclick="Lookup" class="myButton">Lookup</button>
+                </div>
                 <div class="col-3">
-                    <button @onclick="Lookup" class="myButton">Mark</button>
+                    <button @onclick="ValidateXML" class="myButton">Validate</button>
+                    <button @onclick="Download" class="myButton">Save</button>
                 </div>
             </div>
             <div class="row">
@@ -35,7 +45,26 @@
     private MonacoEditor _editorSource { get; set; }
     private string lblSource = "";
     private string lblChooseSource = "Choose Source";
+    private string lblLookup = "";
+    private string lblChooseLookup = "Choose Lookup";
     [CascadingParameter] public IModalService Modal { get; set; }
+    ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
+
+
+    static void ValidationEventHandler(object sender, ValidationEventArgs e)
+    {
+        switch (e.Severity)
+        {
+            case XmlSeverityType.Error:
+                Console.WriteLine("Error: {0}", e.Message);
+                break;
+            case XmlSeverityType.Warning:
+                Console.WriteLine("Warning {0}", e.Message);
+                break;
+        }
+        Helpers.validationErrors.Add(e.Message);
+    }
+
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
     {
         return new StandaloneEditorConstructionOptions
@@ -45,6 +74,26 @@
 
         };
     }
+
+    private async Task ValidateXML()
+    {
+        await Helpers.ValidateXML(AppState, Modal, _editorSource, eventHandler);
+    }
+
+    private async Task Download()
+    {
+        if (await js.InvokeAsync<int>("isChrome") > -1)
+        {
+            var w1 = await js.InvokeAsync<string>("getWidth", "editor-source");
+            var h1 = await js.InvokeAsync<string>("getHeight", "editor-source");
+
+            await js.InvokeVoidAsync("setSize", "editor-source", w1, h1);
+        }
+
+        byte[] file = System.Text.Encoding.UTF8.GetBytes(await _editorSource.GetValue());
+        await js.InvokeVoidAsync("BlazorDownloadFile", lblSource, "text/xml", file);
+    }
+
 
     private async Task Lookup()
     {
@@ -62,7 +111,7 @@
     }
     private async Task OnDidInitSource(MonacoEditorBase editor)
     {
-        await js.InvokeVoidAsync("registerResize");
+        await js.InvokeVoidAsync("registerResize1");
         var i = await js.InvokeAsync<string>("resizeEditor", "editor-source");
         //sourceDecorations = await DisplayDecoration(_editorSource, 4);
         // You can now use 'decorationIds' to change or remove the decorations
@@ -79,6 +128,18 @@
         await Helpers.LoadXMLfromFile(_editorSource, e.File);
     }
 
+    private async Task OnLookupFileChange(InputFileChangeEventArgs e)
+    {
+        lblLookup = e.File.Name;
+        lblChooseLookup = "Lookup: ";
+
+        if (e.File.Size > 512000)
+        {
+            lblSource = $"{lblLookup} is larger the 500kb!";
+        }
+        //        await Helpers.LoadXMLfromFile(_editorSource, e.File);
+    }
+
     protected async override void OnInitialized()
     {
         //        AppState.isWorking();
@@ -93,5 +154,4 @@
     {
         await js.InvokeVoidAsync("showCurrentNav", "X2T2XNav");
     }
-
-}
+  }
