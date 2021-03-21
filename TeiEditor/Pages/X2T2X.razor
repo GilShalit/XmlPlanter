@@ -10,7 +10,7 @@
 @inject HttpClient _client
 @inject AppState AppState
 <div class="container-fluid">
-    <div class="row w-100">
+    <div class="row">
         <div class="col">
             <div class="row" style="margin-bottom:5px">
                 <div class="col-3 file-input-zone">
@@ -48,7 +48,7 @@
 
     private async Task Lookup()
     {
-        
+
     }
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
@@ -63,7 +63,7 @@
     private async Task OnDidInitSource(MonacoEditorBase editor)
     {
         await js.InvokeVoidAsync("registerResize");
-        var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
+        var i = await js.InvokeAsync<string>("resizeEditor", "editor-source");
         //sourceDecorations = await DisplayDecoration(_editorSource, 4);
         // You can now use 'decorationIds' to change or remove the decorations
     }
@@ -82,6 +82,8 @@
     protected async override void OnInitialized()
     {
         //        AppState.isWorking();
+        AppState.OpMode = enmOpMode.NewAttribLookup;
+        AppState.PageMode = enmPage.X2T2X;
 
 
         //AppState.notWorking();

@@ -3,15 +3,27 @@
 <div class="simple-form">
     <div style="margin-bottom:20px;">
         Mode:
-        <select @bind="X2XMode">
-            <option value=@Extensions.GetEnumDisplayName(enmX2XMode.None)>
-                @Extensions.GetDescription(enmX2XMode.None)
+        <select @bind="OpMode" class="@X2XHidden">
+            @*            <option value=@Extensions.GetEnumDisplayName(enmOpMode.None)>
+                @Extensions.GetDescription(enmOpMode.None)
+                </option>
+            *@
+            <option value=@Extensions.GetEnumDisplayName(enmOpMode.CopyTagWithAttribs)>
+                @Extensions.GetDescription(enmOpMode.CopyTagWithAttribs)
             </option>
-            <option value=@Extensions.GetEnumDisplayName(enmX2XMode.CopyTagWithAttribs)>
-                @Extensions.GetDescription(enmX2XMode.CopyTagWithAttribs)
+            <option value=@Extensions.GetEnumDisplayName(enmOpMode.CopyTagWithNewAttribs)>
+                @Extensions.GetDescription(enmOpMode.CopyTagWithNewAttribs)
             </option>
-            <option value=@Extensions.GetEnumDisplayName(enmX2XMode.CopyTagWithNewAttribs)>
-                @Extensions.GetDescription(enmX2XMode.CopyTagWithNewAttribs)
+        </select>
+        <select @bind="OpMode" class="@X2T2XHidden">
+            <option value=@Extensions.GetEnumDisplayName(enmOpMode.NewAttribLookup)>
+                @Extensions.GetDescription(enmOpMode.NewAttribLookup)
+            </option>
+            <option value=@Extensions.GetEnumDisplayName(enmOpMode.ChangeAttribLookup)>
+                @Extensions.GetDescription(enmOpMode.ChangeAttribLookup)
+            </option>
+            <option value=@Extensions.GetEnumDisplayName(enmOpMode.AttribLookupContents)>
+                @Extensions.GetDescription(enmOpMode.AttribLookupContents)
             </option>
         </select>
     </div>
@@ -24,6 +36,10 @@
         <label for="Attribute">Attribute Name</label>
         <input @bind="Attribute" type="text" class="form-control" id="attribute" placeholder="Attribute to work on" />
     </div>
+    <div class="form-group @NewAttributeHidden">
+        <label for="Attribute">New Attribute Name</label>
+        <input @bind="newAttribute" type="text" class="form-control" id="attribute" placeholder="Attribute to work on" />
+    </div>
     <div class="form-group @attribStartHidden">
         <label for="attribStartVal">New Attribute Start Value</label>
         <input @bind="attribStartVal" type="text" class="form-control" id="attributeStart" placeholder="New Attribute start value" />
@@ -34,43 +50,74 @@
 </div>
 
 @code {
-
     [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
 
     string Tag { get; set; }
     string Attribute { get; set; }
+    string newAttribute { get; set; }
     public int attribStartVal { get; set; }
     string TagHidden { get; set; }
+    string hidden = "none";
+
+    string X2XHidden { get; set; }
+    string X2T2XHidden { get; set; }
+
     string AttributeHidden { get; set; }
+    string NewAttributeHidden { get; set; }
     public string attribStartHidden { get; set; }
 
 
-    enmX2XMode _X2XMode;
-    enmX2XMode X2XMode
+    enmOpMode _OpMode;
+    enmOpMode OpMode
     {
-        get { return _X2XMode; }
+        get { return _OpMode; }
         set
         {
-            _X2XMode = value;
+            _OpMode = value;
             switch (Extensions.GetEnumDisplayName(value))
             {
                 case "None":
-                    AppState.X2XMode = enmX2XMode.None;
-                    TagHidden = "hidden";
-                    AttributeHidden = "hidden";
-                    attribStartHidden = "hidden";
+                    //AppState.OpMode = enmOpMode.None;
+                    TagHidden = hidden;
+                    AttributeHidden = hidden;
+                    NewAttributeHidden = hidden;
+                    attribStartHidden = hidden;
                     break;
                 case "CopyTagWithAttribs":
-                    AppState.X2XMode = enmX2XMode.CopyTagWithAttribs;
+                    //AppState.OpMode = enmOpMode.CopyTagWithAttribs;
                     TagHidden = "";
-                    AttributeHidden = "hidden";
-                    attribStartHidden = "hidden";
+                    AttributeHidden = hidden;
+                    NewAttributeHidden = hidden;
+                    attribStartHidden = hidden;
                     break;
                 case "CopyTagWithNewAttribs":
-                    AppState.X2XMode = enmX2XMode.CopyTagWithNewAttribs;
+                    //AppState.OpMode = enmOpMode.CopyTagWithNewAttribs;
                     TagHidden = "";
                     AttributeHidden = "";
+                    NewAttributeHidden = hidden;
                     attribStartHidden = "";
+                    break;
+
+                case "NewAttribLookup":
+                    //AppState.OpMode = enmOpMode.NewAttribLookup;
+                    TagHidden = "";
+                    AttributeHidden = "";
+                    NewAttributeHidden = "";
+                    attribStartHidden = hidden;
+                    break;
+                case "ChangeAttribLookup":
+                    //AppState.OpMode = enmOpMode.ChangeAttribLookup;
+                    TagHidden = "";
+                    AttributeHidden = "";
+                    NewAttributeHidden = hidden;
+                    attribStartHidden = hidden;
+                    break;
+                case "AttribLookupContents":
+                    //AppState.OpMode = enmOpMode.AttribLookupContents;
+                    TagHidden = "";
+                    AttributeHidden = "";
+                    NewAttributeHidden = hidden;
+                    attribStartHidden = hidden;
                     break;
             }
         }
@@ -81,43 +128,34 @@
         //BlazoredModal.SetTitle("Enter a Message");
         Tag = AppState.tagName;
         Attribute = AppState.attribName;
+        newAttribute = AppState.newAttribName;
         attribStartVal = AppState.attribStartVal;
-        X2XMode = AppState.X2XMode;
+        OpMode = AppState.OpMode;
+        switch (AppState.PageMode)
+        {
+            case enmPage.X2X:
+                X2XHidden = "";
+                X2T2XHidden = hidden;
+                break;
+            case enmPage.X2T2X:
+                X2XHidden = hidden;
+                X2T2XHidden = "";
+                break;
+        }
     }
 
     async Task SubmitForm()
     {
         AppState.tagName = Tag;
         AppState.attribName = Attribute;
+        AppState.newAttribName = newAttribute;
         AppState.attribStartVal = attribStartVal;
-        AppState.X2XMode = (enmX2XMode)X2XMode;
+        AppState.OpMode = (enmOpMode)OpMode;
         //        await BlazoredModal.CloseAsync(ModalResult.Ok(Tag));
         await BlazoredModal.CloseAsync();
     }
 
     async Task Cancel() => await BlazoredModal.CancelAsync();
 
-    private void ChangeMode(ChangeEventArgs e)
-    {
-        Console.WriteLine($"setting theme to: {e.Value.ToString()}");
-        switch (e.Value.ToString())
-        {
-            case "0":
-                AppState.X2XMode = enmX2XMode.None;
-                TagHidden = "hidden";
-                AttributeHidden = "hidden";
-                break;
-            case "1":
-                AppState.X2XMode = enmX2XMode.CopyTagWithAttribs;
-                TagHidden = "";
-                AttributeHidden = "hidden";
-                break;
-            case "2":
-                AppState.X2XMode = enmX2XMode.CopyTagWithNewAttribs;
-                TagHidden = "";
-                AttributeHidden = "";
-                break;
-        }
-
     }
-}
+

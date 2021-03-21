@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace TeiEditor
 {
-    public enum enmX2XMode
+    public enum enmOpMode
     {
         [Display(Name = "None")]
         [Description("None")]
@@ -17,8 +17,23 @@ namespace TeiEditor
         CopyTagWithAttribs = 1,
         [Display(Name = "CopyTagWithNewAttribs")]
         [Description("Copy tag with new attribute")]
-        CopyTagWithNewAttribs = 2
+        CopyTagWithNewAttribs = 2,
 
+        [Display(Name = "NewAttribLookup")]
+        [Description("Add new attribute value based on a different attribute lookup")]
+        NewAttribLookup = 3,
+        [Display(Name = "ChangeAttribLookup")]
+        [Description("Change attribute value based on existing value lookup")]
+        ChangeAttribLookup = 4,
+        [Display(Name = "AttribLookupContents")]
+        [Description("Change attribute value based on a tag contents lookup")]
+        AttribLookupContents = 5
+    }
+
+    public enum enmPage
+    {
+        X2X = 0,
+        X2T2X = 1
     }
 
     public class AppState
@@ -26,8 +41,10 @@ namespace TeiEditor
         public string hiddenClass { get; private set; }
         public string tagName { get; set; }
         public string attribName { get; set; }
+        public string newAttribName { get; set; }
         public int attribStartVal { get; set; }
-        public enmX2XMode X2XMode { get; set; }
+        public enmOpMode OpMode { get; set; }
+        public enmPage PageMode { get; set; }
         private int count;
 
         public event Action OnChange;
@@ -39,11 +56,9 @@ namespace TeiEditor
 
             tagName = "seg";
             attribName = "xml:id";
+            newAttribName = "ref";
             attribStartVal = 1;
-            
-            X2XMode = enmX2XMode.CopyTagWithAttribs;
         }
-
 
         public void isWorking()
         {

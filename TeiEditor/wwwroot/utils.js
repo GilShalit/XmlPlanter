@@ -14,15 +14,27 @@ window.isChrome = function () {
 }
 
 window.resizeEditors = function (id) {
-    console.log('resize ' + id);
+    //console.log('resize ' + id);
     var sourceE = document.getElementById(id);
     var height = `${window.innerHeight - 150}px`;
     var width = `${(window.innerWidth - 120) / 2}px`;
 
-//    console.log('h= ' + sourceE.style.height + ' w= ' +sourceE.style.width);
+    //    console.log('h= ' + sourceE.style.height + ' w= ' +sourceE.style.width);
     sourceE.style.width = width;
     sourceE.style.height = height;
-//    console.log('h= ' + sourceE.style.height + ' w= ' + sourceE.style.width);
+    //    console.log('h= ' + sourceE.style.height + ' w= ' + sourceE.style.width);
+}
+
+window.resizeEditor = function (id) {
+    console.log('resize ' + id);
+    var sourceE = document.getElementById(id);
+    var height = `${window.innerHeight - 150}px`;
+    var width = `${(window.innerWidth - 120) }px`;
+
+    //    console.log('h= ' + sourceE.style.height + ' w= ' +sourceE.style.width);
+    sourceE.style.width = width;
+    sourceE.style.height = height;
+    //    console.log('h= ' + sourceE.style.height + ' w= ' + sourceE.style.width);
 }
 
 window.getWidth = function (id) {

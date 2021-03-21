@@ -83,6 +83,9 @@
         Console.WriteLine("Initialized");
         AppState.isWorking();
 
+        AppState.PageMode = enmPage.X2X;
+        AppState.OpMode = enmOpMode.CopyTagWithAttribs;
+
         //load schemaSet for validation
         await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0", schemaSet, _client);
         await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", schemaSet, _client);
@@ -295,15 +298,15 @@
     private async Task CopyTag(bool newTagVal = false)
     {
         string msg = "";
-        switch (AppState.X2XMode)
+        switch (AppState.OpMode)
         {
-            case enmX2XMode.None:
+            case enmOpMode.None:
                 msg = "Please select mode in configuration";
                 break;
-            case enmX2XMode.CopyTagWithAttribs:
+            case enmOpMode.CopyTagWithAttribs:
                 if (newTagVal) msg = "Mode is not 'Copy tag with NEW attribute'";
                 break;
-            case enmX2XMode.CopyTagWithNewAttribs:
+            case enmOpMode.CopyTagWithNewAttribs:
                 if (!newTagVal) msg = "Mode is 'Copy tag with NEW attribute'";
                 break;
         }

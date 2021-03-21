@@ -120,6 +120,10 @@ a, .btn-link {
     visibility:hidden;
 }
 
+.none{
+    display:none;
+}
+
 .myButton {
     background-color: lightblue;
     color: white;
