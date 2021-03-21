@@ -97,6 +97,7 @@ a, .btn-link {
     border-style:solid;
     border-color:blue;
     border-radius:3px;
+    font-size:14px;
 }
 
     .file-input-zone:hover {

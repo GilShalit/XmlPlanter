@@ -14,11 +14,15 @@ window.isChrome = function () {
 }
 
 window.resizeEditors = function (id) {
-    let wh = window.innerHeight;
+    console.log('resize ' + id);
     var sourceE = document.getElementById(id);
     var height = `${window.innerHeight - 150}px`;
+    var width = `${(window.innerWidth - 120) / 2}px`;
+
+//    console.log('h= ' + sourceE.style.height + ' w= ' +sourceE.style.width);
+    sourceE.style.width = width;
     sourceE.style.height = height;
-    //sourceE.style.width = sourceE.querySelector('.monaco-editor').style.width + 2;
+//    console.log('h= ' + sourceE.style.height + ' w= ' + sourceE.style.width);
 }
 
 window.getWidth = function (id) {

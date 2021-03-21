@@ -10,7 +10,7 @@
 @inject HttpClient _client
 @inject AppState AppState
 <div class="container-fluid">
-    <div class="row w-100">
+    <div class="row " id="top-container">
         <div class="col">
             <div class="row" style="margin-bottom:5px">
                 <div class="col-3 file-input-zone">
@@ -35,7 +35,7 @@
                     <InputFile OnChange="@OnTargetFileChange" accept=".xml" />
                     @lblChooseTarget
                 </div>
-                <div class="col-5" style="padding-top:3px!important">@lblTarget</div>
+                <div class="col-4" style="padding-top:3px!important">@lblTarget</div>
                 <div class="col-4">
                     <button @onclick="ValidateXML" class="myButton">Validate</button>
                     <button @onclick="Download" class="myButton">Save</button>
@@ -52,7 +52,6 @@
 @code {
     private MonacoEditor _editorSource { get; set; }
     private MonacoEditor _editorTarget { get; set; }
-    private List<string> lSourceLines = new List<string>();
     private List<string> lTargetLines = new List<string>();
     private string ValueToSet { get; set; }
     private Dictionary<string, BlazorMonaco.Range> sourceDecorations = new Dictionary<string, BlazorMonaco.Range>();
@@ -68,6 +67,220 @@
     List<FindMatch> sourceMatches { get; set; }
     string currentRangeId = "";
     KeyValuePair<string, BlazorMonaco.Range> currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
+
+    private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
+    {
+        return new StandaloneEditorConstructionOptions
+        {
+            GlyphMargin = true,
+            AutomaticLayout = true,
+
+        };
+    }
+
+    protected async override void OnInitialized()
+    {
+        Console.WriteLine("Initialized");
+        AppState.isWorking();
+
+        //load schemaSet for validation
+        await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0", schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", schemaSet, _client);
+        await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", schemaSet, _client);
+        await AddCopyTagActions();
+
+        AppState.notWorking();
+        Console.WriteLine("Initialized done");
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        Console.WriteLine("AfterRender");
+
+        if (!firstRender) await js.InvokeVoidAsync("showCurrentNav", "mainNav");
+        Console.WriteLine("AfterRender done");
+    }
+
+    private async Task OnDidInitSource(MonacoEditorBase editor)
+    {
+        Console.WriteLine("InitiSource");
+        await js.InvokeVoidAsync("registerResize");
+        var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
+        //sourceDecorations = await DisplayDecoration(_editorSource, 4);
+        // You can now use 'decorationIds' to change or remove the decorations
+        Console.WriteLine("InitiSource done");
+    }
+
+    private async Task OnDidInitTarget(MonacoEditorBase editor)
+    {
+        //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
+        Console.WriteLine("InitiTarget");
+
+        var i = await js.InvokeAsync<string>("resizeEditors", "editor-target");
+        //decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
+        // You can now use 'decorationIds' to change or remove the decorations
+        Console.WriteLine("InitiTarget done");
+    }
+
+    private void OnContextMenuSource(EditorMouseEvent eventArg)
+    {
+        // To disable menu options according to mode:
+        // https://stackoverflow.com/questions/62001650/how-to-open-context-menu-in-monaco-editor-based-on-line-content-in-angular
+        // requires an implementation of MonacoEditorBase.createContextKey
+        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
+    }
+
+    private async void onMouseDownSource(EditorMouseEvent eventArg)
+    {
+        if (eventArg.Event.LeftButton)
+        {
+            Position pClick = eventArg.Target.Position;
+            KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
+                                                            where d.Value.StartLineNumber <= pClick.LineNumber && d.Value.EndLineNumber >= pClick.LineNumber
+                                                            select d).FirstOrDefault();
+
+            if (string.IsNullOrEmpty(dec.Key))
+            {
+                await Helpers.RemoveDecoration(_editorSource, currentRangeId);
+                currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
+            }
+            else
+            {
+                TextModel sourceModel = await _editorSource.GetModel();
+                string tag = await sourceModel.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
+
+                Position pEnd;
+                if (Helpers.IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
+                else pEnd = await Helpers.getEndOfTag(AppState.tagName, dec.Value, sourceModel);
+
+                BlazorMonaco.Range range = new BlazorMonaco.Range()
+                {
+                    StartColumn = dec.Value.StartColumn,
+                    StartLineNumber = dec.Value.StartLineNumber,
+                    EndColumn = pEnd.Column,
+                    EndLineNumber = pEnd.LineNumber
+                };
+                currentRangeId = await Helpers.ColorRange(_editorSource, range, currentRangeId, enmStatusColor.Current);
+                currentDec = dec;
+            }
+
+        }
+    }
+    private void OnContextMenuTarget(EditorMouseEvent eventArg)
+    {
+        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
+    }
+
+    private async Task OnSourceFileChange(InputFileChangeEventArgs e)
+    {
+        lblSource = e.File.Name;
+        lblChooseSource = "Source: ";
+
+        if (e.File.Size > 512000)
+        {
+            lblSource = $"{lblSource} is larger the 500kb!";
+        }
+        await Helpers.LoadXMLfromFile(_editorSource, e.File);
+    }
+
+    private async Task OnTargetFileChange(InputFileChangeEventArgs e)
+    {
+        lblTarget = e.File.Name;
+        lblChooseTarget = "Target: ";
+
+        if (e.File.Size > 512000)
+        {
+            lblTarget = $"{lblTarget} is larger the 500kb!";
+        }
+        lTargetLines = await Helpers.LoadXMLfromFile(_editorTarget, e.File);
+    }
+
+    private async Task AddCopyTagActions()
+    {
+        //https://stackoverflow.com/questions/64057359/difference-between-editor-addaction-and-editor-addcommand-and-their-use-case
+        //
+        await _editorTarget.AddAction("CopyTag", "Copy Tag with Attributes",
+            new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_S },
+            null, null, "navigation", 1.5, (editor, keyCodes) => CopyTag());
+        await _editorTarget.AddAction("CopyTagWNewAttrib", "Copy Tag with New Attribute",
+            new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_N },
+            null, null, "navigation", 1.5, (editor, keyCodes) => CopyTagWNew());
+    }
+
+    private async Task ValidateXML()
+    {
+        try
+        {
+            AppState.isWorking();
+            validationErrors.Clear();
+            await Task.Delay(1);
+
+            byte[] byteArrayX = Encoding.ASCII.GetBytes(await _editorTarget.GetValue());
+            MemoryStream streamX = new MemoryStream(byteArrayX);
+            XmlReader reader = XmlReader.Create(streamX);
+
+            XmlDocument document = new XmlDocument();
+            document.Load(reader);
+            document.Schemas = schemaSet;
+
+            document.Validate(eventHandler);
+        }
+        catch (Exception e)
+        {
+            validationErrors.Add(e.Message);
+            //throw;
+        }
+        finally
+        {
+            AppState.notWorking();
+            ShowValModal();
+        }
+    }
+
+    void ShowValModal()
+    {
+        if (validationErrors.Count > 0)
+        {
+            string msg = "";
+            foreach (string s in validationErrors)
+            {
+                msg = msg + s + Environment.NewLine;
+            }
+            Helpers.ShowModal(msg, Modal);
+        }
+    }
+
+    static void ValidationEventHandler(object sender, ValidationEventArgs e)
+    {
+        switch (e.Severity)
+        {
+            case XmlSeverityType.Error:
+                Console.WriteLine("Error: {0}", e.Message);
+                break;
+            case XmlSeverityType.Warning:
+                Console.WriteLine("Warning {0}", e.Message);
+                break;
+        }
+        validationErrors.Add(e.Message);
+    }
+
+    private async Task Download()
+    {
+        if (await js.InvokeAsync<int>("isChrome") > -1)
+        {
+            var w1 = await js.InvokeAsync<string>("getWidth", "editor-source");
+            var w2 = await js.InvokeAsync<string>("getWidth", "editor-target");
+            var h1 = await js.InvokeAsync<string>("getHeight", "editor-source");
+            var h2 = await js.InvokeAsync<string>("getHeight", "editor-target");
+
+            await js.InvokeVoidAsync("setSize", "editor-source", w1, h1);
+            await js.InvokeVoidAsync("setSize", "editor-target", w2, h2);
+        }
+
+        byte[] file = System.Text.Encoding.UTF8.GetBytes(await _editorTarget.GetValue());
+        await js.InvokeVoidAsync("BlazorDownloadFile", lblTarget, "text/xml", file);
+    }
 
     private async Task markTags()
     {
@@ -174,210 +387,4 @@
     {
         await CopyTag(newTagVal: true);
     }
-
-    private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
-    {
-        return new StandaloneEditorConstructionOptions
-        {
-            GlyphMargin = true,
-            AutomaticLayout = true,
-
-        };
-    }
-
-    protected async override void OnInitialized()
-    {
-        AppState.isWorking();
-
-        //load schemaSet for validation
-        await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0", schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", schemaSet, _client);
-        await AddCopyTagActions();
-
-        AppState.notWorking();
-    }
-
-    protected async override Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) await js.InvokeVoidAsync("showCurrentNav", "mainNav");
-    }
-
-    private async Task OnDidInitSource(MonacoEditorBase editor)
-    {
-        await js.InvokeVoidAsync("registerResize");
-        var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
-        //sourceDecorations = await DisplayDecoration(_editorSource, 4);
-        // You can now use 'decorationIds' to change or remove the decorations
-    }
-
-    private async Task OnDidInitTarget(MonacoEditorBase editor)
-    {
-        //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
-
-        var i = await js.InvokeAsync<string>("resizeEditors", "editor-target");
-        //decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
-        // You can now use 'decorationIds' to change or remove the decorations
-    }
-
-    private void OnContextMenuSource(EditorMouseEvent eventArg)
-    {
-        // To disable menu options according to mode:
-        // https://stackoverflow.com/questions/62001650/how-to-open-context-menu-in-monaco-editor-based-on-line-content-in-angular
-        // requires an implementation of MonacoEditorBase.createContextKey
-        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
-    }
-
-    private async void onMouseDownSource(EditorMouseEvent eventArg)
-    {
-        if (eventArg.Event.LeftButton)
-        {
-            Position pClick = eventArg.Target.Position;
-            KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
-                                                            where d.Value.StartLineNumber <= pClick.LineNumber && d.Value.EndLineNumber >= pClick.LineNumber
-                                                            select d).FirstOrDefault();
-
-            if (string.IsNullOrEmpty(dec.Key))
-            {
-                await Helpers.RemoveDecoration(_editorSource, currentRangeId);
-                currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
-            }
-            else
-            {
-                TextModel sourceModel = await _editorSource.GetModel();
-                string tag = await sourceModel.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
-
-                Position pEnd;
-                if (Helpers.IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
-                else pEnd = await Helpers.getEndOfTag(AppState.tagName, dec.Value, sourceModel);
-
-                BlazorMonaco.Range range = new BlazorMonaco.Range()
-                {
-                    StartColumn = dec.Value.StartColumn,
-                    StartLineNumber = dec.Value.StartLineNumber,
-                    EndColumn = pEnd.Column,
-                    EndLineNumber = pEnd.LineNumber
-                };
-                currentRangeId = await Helpers.ColorRange(_editorSource, range, currentRangeId, enmStatusColor.Current);
-                currentDec = dec;
-            }
-
-        }
-    }
-    private void OnContextMenuTarget(EditorMouseEvent eventArg)
-    {
-        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
-    }
-
-    private async Task OnSourceFileChange(InputFileChangeEventArgs e)
-    {
-        lblSource = e.File.Name;
-        lblChooseSource = "Source: ";
-
-        if (e.File.Size > 512000)
-        {
-            lblSource = $"{lblSource} is larger the 500kb!";
-        }
-        lSourceLines = await Helpers.LoadXMLfromFile(_editorSource, e.File);
-    }
-
-    private async Task OnTargetFileChange(InputFileChangeEventArgs e)
-    {
-        lblTarget = e.File.Name;
-        lblChooseTarget = "Target: ";
-
-        if (e.File.Size > 512000)
-        {
-            lblTarget = $"{lblTarget} is larger the 500kb!";
-        }
-        lTargetLines = await Helpers.LoadXMLfromFile(_editorTarget, e.File);
-    }
-
-    private async Task AddCopyTagActions()
-    {
-        //https://stackoverflow.com/questions/64057359/difference-between-editor-addaction-and-editor-addcommand-and-their-use-case
-        //
-        await _editorTarget.AddAction("CopyTag", "Copy Tag with Attributes",
-            new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_T },
-            null, null, "navigation", 1.5, (editor, keyCodes) => CopyTag());
-        await _editorTarget.AddAction("CopyTagWNewAttrib", "Copy Tag with New Attribute",
-            new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_N },
-            null, null, "navigation", 1.5, (editor, keyCodes) => CopyTagWNew());
-    }
-
-    private async Task ValidateXML()
-    {
-        try
-        {
-            AppState.isWorking();
-            validationErrors.Clear();
-            await Task.Delay(1);
-
-            byte[] byteArrayX = Encoding.ASCII.GetBytes(await _editorTarget.GetValue());
-            MemoryStream streamX = new MemoryStream(byteArrayX);
-            XmlReader reader = XmlReader.Create(streamX);
-
-            XmlDocument document = new XmlDocument();
-            document.Load(reader);
-            document.Schemas = schemaSet;
-
-            document.Validate(eventHandler);
-        }
-        catch (Exception e)
-        {
-            validationErrors.Add(e.Message);
-            //throw;
-        }
-        finally
-        {
-            AppState.notWorking();
-            ShowValModal();
-        }
-    }
-
-    void ShowValModal()
-    {
-        if (validationErrors.Count > 0)
-        {
-            string msg = "";
-            foreach (string s in validationErrors)
-            {
-                msg = msg + s + Environment.NewLine;
-            }
-            Helpers.ShowModal(msg, Modal);
-        }
-    }
-
-    static void ValidationEventHandler(object sender, ValidationEventArgs e)
-    {
-        switch (e.Severity)
-        {
-            case XmlSeverityType.Error:
-                Console.WriteLine("Error: {0}", e.Message);
-                break;
-            case XmlSeverityType.Warning:
-                Console.WriteLine("Warning {0}", e.Message);
-                break;
-        }
-        validationErrors.Add(e.Message);
-    }
-
-    private async Task Download()
-    {
-        if (await js.InvokeAsync<int>("isChrome") > -1)
-        {
-            var w1 = await js.InvokeAsync<string>("getWidth", "editor-source");
-            var w2 = await js.InvokeAsync<string>("getWidth", "editor-target");
-            var h1 = await js.InvokeAsync<string>("getHeight", "editor-source");
-            var h2 = await js.InvokeAsync<string>("getHeight", "editor-target");
-
-            await js.InvokeVoidAsync("setSize", "editor-source", w1, h1);
-            await js.InvokeVoidAsync("setSize", "editor-target", w2, h2);
-        }
-
-        byte[] file = System.Text.Encoding.UTF8.GetBytes(await _editorTarget.GetValue());
-        await js.InvokeVoidAsync("BlazorDownloadFile", lblTarget, "text/xml", file);
-    }
-
 }
