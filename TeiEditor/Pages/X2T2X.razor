@@ -34,7 +34,7 @@
             </div>
             <div class="row">
                 <div class="col" style="padding-left:0!important;">
-                    <MonacoEditor @ref="_editorSource" Id="editor-source" ConstructionOptions="EditorConstructionOptions"
+                    <MonacoEditor @ref="_editorSource" Id="editor-lookup" ConstructionOptions="EditorConstructionOptions"
                                   OnDidInit="OnDidInitSource" OnContextMenu="OnContextMenuSource" OnMouseDown="onMouseDownSource" />
                 </div>
             </div>
@@ -103,7 +103,7 @@
     private async Task OnDidInitSource(MonacoEditorBase editor)
     {
         await js.InvokeVoidAsync("registerResize1");
-        var i = await js.InvokeAsync<string>("resizeEditor", "editor-source");
+        var i = await js.InvokeAsync<string>("resizeEditor", "editor-lookup");
         //sourceDecorations = await DisplayDecoration(_editorSource, 4);
         // You can now use 'decorationIds' to change or remove the decorations
     }
@@ -133,12 +133,18 @@
 
     protected async override void OnInitialized()
     {
-        //        AppState.isWorking();
+        AppState.isWorking();
+        await Task.Delay(1);
+        //await AddCopyTagActions();
+
+        Helpers.validationErrors = new List<string>();
+        Helpers.schemaSet = new XmlSchemaSet();
+        await _editorSource.SetValue("");
+
         AppState.OpMode = enmOpMode.NewAttribLookup;
         AppState.PageMode = enmPage.X2T2X;
 
-
-        //AppState.notWorking();
+        AppState.notWorking();
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
