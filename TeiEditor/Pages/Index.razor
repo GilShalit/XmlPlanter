@@ -230,19 +230,7 @@
 
     private async Task Download()
     {
-        if (await js.InvokeAsync<int>("isChrome") > -1)
-        {
-            var w1 = await js.InvokeAsync<string>("getWidth", "editor-source");
-            var w2 = await js.InvokeAsync<string>("getWidth", "editor-target");
-            var h1 = await js.InvokeAsync<string>("getHeight", "editor-source");
-            var h2 = await js.InvokeAsync<string>("getHeight", "editor-target");
-
-            await js.InvokeVoidAsync("setSize", "editor-source", w1, h1);
-            await js.InvokeVoidAsync("setSize", "editor-target", w2, h2);
-        }
-
-        byte[] file = System.Text.Encoding.UTF8.GetBytes(await _editorTarget.GetValue());
-        await js.InvokeVoidAsync("BlazorDownloadFile", lblTarget, "text/xml", file);
+        await Helpers.Download(lblTarget, AppState, Modal, _editorTarget, js, true);
     }
 
     private async Task markTags()

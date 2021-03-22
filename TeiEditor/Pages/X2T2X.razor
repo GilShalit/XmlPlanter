@@ -82,16 +82,7 @@
 
     private async Task Download()
     {
-        if (await js.InvokeAsync<int>("isChrome") > -1)
-        {
-            var w1 = await js.InvokeAsync<string>("getWidth", "editor-source");
-            var h1 = await js.InvokeAsync<string>("getHeight", "editor-source");
-
-            await js.InvokeVoidAsync("setSize", "editor-source", w1, h1);
-        }
-
-        byte[] file = System.Text.Encoding.UTF8.GetBytes(await _editorSource.GetValue());
-        await js.InvokeVoidAsync("BlazorDownloadFile", lblSource, "text/xml", file);
+        await Helpers.Download(lblSource, AppState, Modal, _editorSource, js, false);
     }
 
 

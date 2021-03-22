@@ -45,7 +45,9 @@ namespace TeiEditor
         public int attribStartVal { get; set; }
         public enmOpMode OpMode { get; set; }
         public enmPage PageMode { get; set; }
+        public string Message { get; set; }
         private int count;
+
 
         public event Action OnChange;
 

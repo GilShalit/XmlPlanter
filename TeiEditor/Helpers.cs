@@ -14,6 +14,8 @@ using System.Xml.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using TeiEditor.Pages;
+using TeiEditor.Shared;
+using Microsoft.JSInterop;
 
 namespace TeiEditor
 {
@@ -35,7 +37,30 @@ namespace TeiEditor
         static public List<string> validationErrors = new List<string>();
         static public XmlSchemaSet schemaSet = new XmlSchemaSet();
 
+        public static async Task Download(string filename,AppState AppState,IModalService Modal,MonacoEditor editor, IJSRuntime js,bool twoEditorForm)
+        {
+            AppState.Message = filename;
+            ModalOptions options = new ModalOptions() { HideCloseButton = true };
+            var FileNameForm = Modal.Show<FileNameForm>(title: "", options);
+            var result = await FileNameForm.Result;
+            if (result.Cancelled) return;
 
+            if (await js.InvokeAsync<int>("isChrome") > -1)
+            {
+                var w1 = await js.InvokeAsync<string>("getWidth", "editor-source");
+                var h1 = await js.InvokeAsync<string>("getHeight", "editor-source");
+                await js.InvokeVoidAsync("setSize", "editor-source", w1, h1);
+                if (twoEditorForm)
+                {
+                    var w2 = await js.InvokeAsync<string>("getWidth", "editor-target");
+                    var h2 = await js.InvokeAsync<string>("getHeight", "editor-target");
+                    await js.InvokeVoidAsync("setSize", "editor-target", w2, h2);
+                }
+            }
+
+            byte[] file = System.Text.Encoding.UTF8.GetBytes(await editor.GetValue());
+            await js.InvokeVoidAsync("BlazorDownloadFile", result.Data?.ToString() ?? string.Empty, "text/xml", file);
+        }
 
         public static async Task<Position> getEndOfTag(string tagName, BlazorMonaco.Range tagRange, TextModel model)
         {

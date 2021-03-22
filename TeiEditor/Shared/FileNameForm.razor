@@ -1,0 +1,28 @@
+﻿@inject AppState AppState
+
+<div class="simple-form">
+
+    <div class="form-group">
+        <label for="message">File name</label>
+        <input @bind="Message" type="text" class="form-control" id="message" placeholder="Enter a file name" />
+    </div>
+
+    <button @onclick="SubmitForm" class="btn btn-primary">Save</button>
+    <button @onclick="Cancel" class="btn btn-secondary">Cancel</button>
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+
+    string Message { get; set; }
+
+    protected override void OnInitialized()
+    {
+        BlazoredModal.SetTitle("File Save:");
+        Message = AppState.Message;
+    }
+
+    async Task SubmitForm() => await BlazoredModal.CloseAsync(ModalResult.Ok(Message));
+    async Task Cancel() => await BlazoredModal.CancelAsync();
+
+}
