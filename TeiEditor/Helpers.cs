@@ -185,6 +185,7 @@ namespace TeiEditor
             doc = JsonDocument.Parse(t);
             return doc.RootElement;
         }
+        
         public static async Task<BlazorMonaco.Range> ExpandTagRange(BlazorMonaco.Range matchRange, TextModel model)
         {
             BlazorMonaco.Range newRange = new BlazorMonaco.Range()
@@ -245,13 +246,13 @@ namespace TeiEditor
             Modal.Show<Confirm>(msg, options);
         }
 
-        public static async Task loadSchema(string path, string nameSpace, XmlSchemaSet schemaSet, HttpClient _client)
+        public static async Task loadSchema(string path, string nameSpace, HttpClient _client)
         {
             byte[] byteArrayS = await _client.GetByteArrayAsync(path);
             //Console.WriteLine($"{path}: {byteArrayS.Length}");
             MemoryStream streamS = new MemoryStream(byteArrayS);
             XmlReader xmlSchemaReader = XmlReader.Create(streamS);
-            Helpers.schemaSet.Add(nameSpace, xmlSchemaReader);
+            schemaSet.Add(nameSpace, xmlSchemaReader);
         }
 
         public static async Task ValidateXML(AppState appState, IModalService Modal,

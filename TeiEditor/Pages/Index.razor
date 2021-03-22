@@ -80,48 +80,42 @@
     {
         AppState.isWorking();
         await Task.Delay(1);
+        await AddCopyTagActions();
 
         AppState.PageMode = enmPage.X2X;
         AppState.OpMode = enmOpMode.CopyTagWithAttribs;
 
         //load schemaSet for validation
-        await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0", Helpers.schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", Helpers.schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", Helpers.schemaSet, _client);
-        await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", Helpers.schemaSet, _client);
-
-        await AddCopyTagActions();
+        if (Helpers.schemaSet.Count == 0)
+        {
+            await Helpers.loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0", _client);
+            await Helpers.loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", _client);
+            await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", _client);
+            await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", _client);
+        }
+        Console.WriteLine(Helpers.schemaSet.Count);
 
         AppState.notWorking();
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
     {
-        Console.WriteLine("AfterRender");
 
         if (!firstRender) await js.InvokeVoidAsync("showCurrentNav", "mainNav");
-        Console.WriteLine("AfterRender done");
     }
 
     private async Task OnDidInitSource(MonacoEditorBase editor)
     {
-        Console.WriteLine("InitiSource");
         await js.InvokeVoidAsync("registerResize");
         var i = await js.InvokeAsync<string>("resizeEditors", "editor-source");
         //sourceDecorations = await DisplayDecoration(_editorSource, 4);
         // You can now use 'decorationIds' to change or remove the decorations
-        Console.WriteLine("InitiSource done");
     }
 
     private async Task OnDidInitTarget(MonacoEditorBase editor)
     {
-        //lTargetLines = await LoadXMLfromFile(_editorTarget, "data/BTAdler20210210.xml");
-        Console.WriteLine("InitiTarget");
 
         var i = await js.InvokeAsync<string>("resizeEditors", "editor-target");
-        //decorationIdsTarget = await DisplayDecoration(_editorTarget, 2);
-        // You can now use 'decorationIds' to change or remove the decorations
-        Console.WriteLine("InitiTarget done");
     }
 
     private void OnContextMenuSource(EditorMouseEvent eventArg)
@@ -129,7 +123,6 @@
         // To disable menu options according to mode:
         // https://stackoverflow.com/questions/62001650/how-to-open-context-menu-in-monaco-editor-based-on-line-content-in-angular
         // requires an implementation of MonacoEditorBase.createContextKey
-        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
     }
 
     private async void onMouseDownSource(EditorMouseEvent eventArg)
