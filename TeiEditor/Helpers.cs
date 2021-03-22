@@ -211,7 +211,7 @@ namespace TeiEditor
             return newRange;
         }
 
-        public static async Task<List<string>> LoadXMLfromFile(MonacoEditor editor, IBrowserFile file)
+        public static async Task LoadXMLfromFile(MonacoEditor editor, IBrowserFile file)
         {
             byte[] bytesOfXML = new byte[file.Size];
             using (Stream strm = file.OpenReadStream())
@@ -222,8 +222,7 @@ namespace TeiEditor
             TextModel model = await MonacoEditorBase.CreateModel(stringOfXML, "xml");
             await editor.SetModel(model);
 
-            List<string> lLines = stringOfXML.Split("\n").ToList<string>();
-            return lLines;
+            //List<string> lLines = stringOfXML.Split("\n").ToList<string>();
         }
 
         public static void ShowValModal(IModalService Modal)

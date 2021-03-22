@@ -19,7 +19,7 @@
                 </div>
                 <div class="col-3" style="padding-top:3px!important">@lblSource</div>
                 <div class="col-1 file-input-zone" style="padding-left:0;padding-right:0">
-                    <InputFile OnChange="@OnLookupFileChange" accept=".xml" />
+                    <InputFile OnChange="@OnLookupFileChange" accept=".tsv" />
                     @lblChooseLookup
                 </div>
                 <div class="col-3" style="padding-top:3px!important">@lblLookup</div>
@@ -47,6 +47,8 @@
     private string lblChooseSource = "Choose Source";
     private string lblLookup = "";
     private string lblChooseLookup = "Choose Lookup";
+    private Dictionary<string, string> dicLookup = new Dictionary<string, string>();
+
     [CascadingParameter] public IModalService Modal { get; set; }
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
 
@@ -70,8 +72,7 @@
         return new StandaloneEditorConstructionOptions
         {
             GlyphMargin = true,
-            AutomaticLayout = true,
-
+            AutomaticLayout = true
         };
     }
 
@@ -112,23 +113,39 @@
         lblSource = e.File.Name;
         lblChooseSource = "Source: ";
 
-        if (e.File.Size > 512000)
-        {
-            lblSource = $"{lblSource} is larger the 500kb!";
-        }
-        await Helpers.LoadXMLfromFile(_editorSource, e.File);
+        if (e.File.Size > 512000) lblSource = $"{lblSource} is larger the 500kb!";
+        else await Helpers.LoadXMLfromFile(_editorSource, e.File);
     }
 
     private async Task OnLookupFileChange(InputFileChangeEventArgs e)
     {
+        dicLookup.Clear();
+
         lblLookup = e.File.Name;
         lblChooseLookup = "Lookup: ";
 
         if (e.File.Size > 512000)
         {
-            lblSource = $"{lblLookup} is larger the 500kb!";
+            lblLookup = $"{lblLookup} is larger the 500kb!";
+            return;
         }
-        //        await Helpers.LoadXMLfromFile(_editorSource, e.File);
+
+        byte[] bytesOfTSV = new byte[e.File.Size];
+        using (Stream strm = e.File.OpenReadStream())
+        {
+            await strm.ReadAsync(bytesOfTSV);
+        }
+        string stringOfTSV = Encoding.UTF8.GetString(bytesOfTSV);
+
+        List<string> stringsOfTSV = stringOfTSV.Split("\n").ToList<string>();
+
+        if (stringsOfTSV.Count > 1) stringsOfTSV.RemoveAt(0);
+        string[] aLine;
+        for (int i = 0; i < stringsOfTSV.Count; i++)
+        {
+            aLine = stringsOfTSV[i].Split("\t");
+            dicLookup.Add(aLine[0].Trim(), aLine[1].Trim());
+        }
     }
 
     protected async override void OnInitialized()
