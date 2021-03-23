@@ -95,6 +95,7 @@
         TextModel model = await _editorSource.GetModel();
         await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
         bool doReplace;
+        int topLineNotFound = -1;
 
         foreach (KeyValuePair<string, BlazorMonaco.Range> dec in sourceDecorations)
         {
@@ -135,31 +136,24 @@
 
             if (doReplace)
             {
-                try
-                {
-                    if (emptyTag) tag = node.OuterXml;
-                    else tag = node.OuterXml.Substring(0, node.OuterXml.IndexOf("</"));
-                    await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
-                    await _editorSource.SetSelection(dec.Value);
+                if (emptyTag) tag = node.OuterXml;
+                else tag = node.OuterXml.Substring(0, node.OuterXml.IndexOf("</"));
+                await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
+                await _editorSource.SetSelection(dec.Value);
 
-                    //ugly hack:
-                    await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(" ", enmTagChanges.DoNothing));//replace with " "
-                    BlazorMonaco.Range range = dec.Value;
-                    range.EndColumn = range.StartColumn; //range on ""
-                    await _editorSource.SetSelection(range); //select " "
-                    await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.DoNothing)); //replace with new tag
-                }
-                catch (Exception e)
-                {
-
-                    throw;
-                }
-
-
+                //ugly hack:
+                await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(" ", enmTagChanges.DoNothing));//replace with " "
+                BlazorMonaco.Range range = dec.Value;
+                range.EndColumn = range.StartColumn; //range on ""
+                await _editorSource.SetSelection(range); //select " "
+                await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.DoNothing)); //replace with new tag
             }
-
+            else
+            {
+                if (topLineNotFound == -1) topLineNotFound = dec.Value.StartLineNumber;//capture first not found line
+            }
         }
-
+        if (topLineNotFound != -1) await _editorSource.RevealLineInCenter(topLineNotFound);
         AppState.notWorking();
     }
 
