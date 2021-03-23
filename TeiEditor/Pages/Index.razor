@@ -63,7 +63,6 @@
     private string lblChooseTarget = "Choose Target";
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
     [CascadingParameter] public IModalService Modal { get; set; }
-    List<FindMatch> sourceMatches { get; set; }
     string currentRangeId = "";
     KeyValuePair<string, BlazorMonaco.Range> currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
 
@@ -98,7 +97,6 @@
             await Helpers.loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", _client);
             await Helpers.loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", _client);
         }
-        Console.WriteLine(Helpers.schemaSet.Count);
 
         AppState.notWorking();
     }
@@ -231,7 +229,7 @@
         AppState.isWorking();
         await Task.Delay(1);
 
-        await Helpers.markTags(_editorSource, AppState.tagName, sourceMatches, sourceDecorations);
+        await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
 
         AppState.notWorking();
     }

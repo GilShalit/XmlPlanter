@@ -49,7 +49,6 @@
     private string lblChooseLookup = "Choose Lookup";
     private Dictionary<string, string> dicLookup = new Dictionary<string, string>();
     private Dictionary<string, BlazorMonaco.Range> sourceDecorations = new Dictionary<string, BlazorMonaco.Range>();
-    List<FindMatch> sourceMatches { get; set; }
 
     [CascadingParameter] public IModalService Modal { get; set; }
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
@@ -92,9 +91,9 @@
     private async Task Lookup()
     {
         AppState.isWorking();
-        await Task.Delay(1);
+        await Task.Delay(5);
         TextModel model = await _editorSource.GetModel();
-        await Helpers.markTags(_editorSource, AppState.tagName, sourceMatches, sourceDecorations);
+        await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
         bool doReplace;
 
         foreach (KeyValuePair<string, BlazorMonaco.Range> dec in sourceDecorations)
@@ -113,11 +112,20 @@
                 case enmOpMode.ChangeAttribLookup:
                     foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                     {
-                        if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has old value as key
+                        try
                         {
-                            attrb.Value = dicLookup[attrb.Value];//change to new value
-                            doReplace = true;
+                            if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has old value as key
+                            {
+                                attrb.Value = dicLookup[attrb.Value];//change to new value
+                                doReplace = true;
+                            }
                         }
+                        catch (Exception e)
+                        {
+
+                            throw;
+                        }
+
                     }
 
                     break;
@@ -127,17 +135,26 @@
 
             if (doReplace)
             {
-                if (emptyTag) tag = node.OuterXml;
-                else tag = node.OuterXml.Substring(0, node.OuterXml.IndexOf("</"));
-                await Helpers.ColorRange(_editorSource, dec.Value,dec.Key);
-                await _editorSource.SetSelection(dec.Value);
+                try
+                {
+                    if (emptyTag) tag = node.OuterXml;
+                    else tag = node.OuterXml.Substring(0, node.OuterXml.IndexOf("</"));
+                    await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
+                    await _editorSource.SetSelection(dec.Value);
 
-                //ugly hack:
-                await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(" ", enmTagChanges.DoNothing));//replace with " "
-                BlazorMonaco.Range range = dec.Value;
-                range.EndColumn = range.StartColumn; //range on ""
-                await _editorSource.SetSelection(range); //select " "
-                await _editorSource.Trigger("keyboard",  "type", Helpers.TagToJson(tag, enmTagChanges.DoNothing)); //replace with new tag
+                    //ugly hack:
+                    await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(" ", enmTagChanges.DoNothing));//replace with " "
+                    BlazorMonaco.Range range = dec.Value;
+                    range.EndColumn = range.StartColumn; //range on ""
+                    await _editorSource.SetSelection(range); //select " "
+                    await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.DoNothing)); //replace with new tag
+                }
+                catch (Exception e)
+                {
+
+                    throw;
+                }
+
 
             }
 
@@ -202,7 +219,6 @@
             aLine = stringsOfTSV[i].Split("\t");
             if (aLine.Length == 2) dicLookup.Add(aLine[0].Trim(), aLine[1].Trim());
         }
-        Console.WriteLine(dicLookup.Count);
     }
 
     protected async override void OnInitialized()

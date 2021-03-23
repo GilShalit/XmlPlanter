@@ -83,10 +83,11 @@ namespace TeiEditor
         }
 
         public static async Task markTags(MonacoEditor editor, string tag,
-            List<FindMatch> sourceMatches,
             Dictionary<string, BlazorMonaco.Range> sourceDecorations)
         {
+            sourceDecorations.Clear();
             TextModel sourceModel = await editor.GetModel();
+            List<FindMatch> sourceMatches;
             await editor.ResetDeltaDecorations();
             List<ModelDeltaDecoration> lstDecorations = new List<ModelDeltaDecoration>();
             sourceMatches = await sourceModel.FindMatches($"<{tag}", false, false, false, null, true, 10000);
