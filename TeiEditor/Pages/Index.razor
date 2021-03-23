@@ -141,6 +141,7 @@
 
             if (string.IsNullOrEmpty(dec.Key))
             {
+                //clicking outside a marked tag - clear previous selection in currentRangeID
                 await Helpers.RemoveDecoration(_editorSource, currentRangeId);
                 currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
             }

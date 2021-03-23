@@ -48,6 +48,8 @@
     private string lblLookup = "";
     private string lblChooseLookup = "Choose Lookup";
     private Dictionary<string, string> dicLookup = new Dictionary<string, string>();
+    private Dictionary<string, BlazorMonaco.Range> sourceDecorations = new Dictionary<string, BlazorMonaco.Range>();
+    List<FindMatch> sourceMatches { get; set; }
 
     [CascadingParameter] public IModalService Modal { get; set; }
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
@@ -89,11 +91,56 @@
 
     private async Task Lookup()
     {
+        AppState.isWorking();
+        await Task.Delay(1);
+        TextModel model = await _editorSource.GetModel();
+        await Helpers.markTags(_editorSource, AppState.tagName, sourceMatches, sourceDecorations);
+        bool doReplace;
 
+        foreach (KeyValuePair<string, BlazorMonaco.Range> dec in sourceDecorations)
+        {
+            doReplace = false;
+            string tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
+            XmlDocument node = new XmlDocument();
+            bool emptyTag = Helpers.IsClosedTag(tag);
+            if (emptyTag) node.LoadXml(tag);
+            else node.LoadXml($"{tag}</{AppState.tagName}>");
+
+            switch (AppState.OpMode)
+            {
+                case enmOpMode.NewAttribLookup:
+                    break;
+                case enmOpMode.ChangeAttribLookup:
+                    foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
+                    {
+                        if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has old value as key
+                        {
+                            attrb.Value = dicLookup[attrb.Value];//change to new value
+                            doReplace = true;
+                        }
+                    }
+
+                    break;
+                case enmOpMode.AttribLookupContents:
+                    break;
+            }
+
+            if (doReplace)
+            {
+                if (emptyTag) tag = node.OuterXml;
+                else tag = node.OuterXml.Substring(0, node.OuterXml.IndexOf("</"));
+                await Helpers.RemoveDecoration(_editorSource, dec.Key);
+            }
+
+        }
+
+        AppState.notWorking();
     }
+
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
     }
+
     private void OnContextMenuSource(EditorMouseEvent eventArg)
     {
         // To disable menu options according to mode:
@@ -122,7 +169,7 @@
         dicLookup.Clear();
 
         lblLookup = e.File.Name;
-        lblChooseLookup = "Lookup: ";
+        lblChooseLookup = "Lookup file: ";
 
         if (e.File.Size > 512000)
         {
@@ -144,8 +191,9 @@
         for (int i = 0; i < stringsOfTSV.Count; i++)
         {
             aLine = stringsOfTSV[i].Split("\t");
-            dicLookup.Add(aLine[0].Trim(), aLine[1].Trim());
+            if (aLine.Length == 2) dicLookup.Add(aLine[0].Trim(), aLine[1].Trim());
         }
+        Console.WriteLine(dicLookup.Count);
     }
 
     protected async override void OnInitialized()
