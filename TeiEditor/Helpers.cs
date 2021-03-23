@@ -47,14 +47,17 @@ namespace TeiEditor
 
             if (await js.InvokeAsync<int>("isChrome") > -1)
             {
-                var w1 = await js.InvokeAsync<string>("getWidth", "editor-source");
-                var h1 = await js.InvokeAsync<string>("getHeight", "editor-source");
-                await js.InvokeVoidAsync("setSize", "editor-source", w1, h1);
+                var w11 = await js.InvokeAsync<string>("getWidth", "editor-lookup");
+                var h11 = await js.InvokeAsync<string>("getHeight", "editor-lookup");
+                await js.InvokeVoidAsync("setSize", "editor-lookup", w11, h11);
                 if (twoEditorForm)
                 {
-                    var w2 = await js.InvokeAsync<string>("getWidth", "editor-target");
-                    var h2 = await js.InvokeAsync<string>("getHeight", "editor-target");
-                    await js.InvokeVoidAsync("setSize", "editor-target", w2, h2);
+                    var w21 = await js.InvokeAsync<string>("getWidth", "editor-source");
+                    var h21 = await js.InvokeAsync<string>("getHeight", "editor-source");
+                    await js.InvokeVoidAsync("setSize", "editor-source", w21, h21);
+                    var w22 = await js.InvokeAsync<string>("getWidth", "editor-target");
+                    var h22 = await js.InvokeAsync<string>("getHeight", "editor-target");
+                    await js.InvokeVoidAsync("setSize", "editor-target", w22, h22);
                 }
             }
 
