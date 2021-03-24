@@ -82,7 +82,6 @@
         await Task.Delay(1);
         await AddCopyTagActions();
         Helpers.validationErrors = new List<string>();
-        Helpers.schemaSet = new XmlSchemaSet();
         await _editorSource.SetValue("");
         await _editorTarget.SetValue("");
 

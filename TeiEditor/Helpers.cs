@@ -273,7 +273,7 @@ namespace TeiEditor
 
                 XmlDocument document = new XmlDocument();
                 document.Load(reader);
-                document.Schemas = Helpers.schemaSet;
+                document.Schemas = schemaSet;
 
                 document.Validate(eventHandler);
             }
