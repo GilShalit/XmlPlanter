@@ -36,6 +36,52 @@ namespace TeiEditor
     {
         static public List<string> validationErrors = new List<string>();
         static public XmlSchemaSet schemaSet = new XmlSchemaSet();
+        static private string currentRangeId ;
+        static public KeyValuePair<string, BlazorMonaco.Range> currentDec;
+
+        public static async Task markWholeTag(
+            string tagName,
+            EditorMouseEvent eventArg,MonacoEditor editor,
+            Dictionary<string, BlazorMonaco.Range> sourceDecorations)
+        {
+            {
+                if (eventArg.Event.LeftButton)
+                {
+                    Position pClick = eventArg.Target.Position;
+                    KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
+                                                                    where d.Value.StartLineNumber <= pClick.LineNumber && d.Value.EndLineNumber >= pClick.LineNumber
+                                                                    select d).FirstOrDefault();
+
+                    if (string.IsNullOrEmpty(dec.Key))
+                    {
+                        //clicking outside a marked tag - clear previous selection in currentRangeID
+                        await Helpers.RemoveDecoration(editor, currentRangeId);
+                        currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
+                    }
+                    else
+                    {
+                        TextModel sourceModel = await editor.GetModel();
+                        string tag = await sourceModel.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
+
+                        Position pEnd;
+                        if (Helpers.IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
+                        else pEnd = await Helpers.getEndOfTag(tagName, dec.Value, sourceModel);
+
+                        BlazorMonaco.Range range = new BlazorMonaco.Range()
+                        {
+                            StartColumn = dec.Value.StartColumn,
+                            StartLineNumber = dec.Value.StartLineNumber,
+                            EndColumn = pEnd.Column,
+                            EndLineNumber = pEnd.LineNumber
+                        };
+                        currentRangeId = await Helpers.ColorRange(editor, range, currentRangeId, enmStatusColor.Current);
+                        currentDec = dec;
+                    }
+
+                }
+            }
+
+        }
 
         public static async Task Download(string filename,AppState AppState,IModalService Modal,MonacoEditor editor, IJSRuntime js,bool twoEditorForm)
         {

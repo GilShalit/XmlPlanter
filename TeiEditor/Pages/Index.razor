@@ -63,8 +63,6 @@
     private string lblChooseTarget = "Choose Target";
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
     [CascadingParameter] public IModalService Modal { get; set; }
-    string currentRangeId = "";
-    KeyValuePair<string, BlazorMonaco.Range> currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
 
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
     {
@@ -129,41 +127,9 @@
 
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
-        if (eventArg.Event.LeftButton)
-        {
-            Position pClick = eventArg.Target.Position;
-            KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
-                                                            where d.Value.StartLineNumber <= pClick.LineNumber && d.Value.EndLineNumber >= pClick.LineNumber
-                                                            select d).FirstOrDefault();
-
-            if (string.IsNullOrEmpty(dec.Key))
-            {
-                //clicking outside a marked tag - clear previous selection in currentRangeID
-                await Helpers.RemoveDecoration(_editorSource, currentRangeId);
-                currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
-            }
-            else
-            {
-                TextModel sourceModel = await _editorSource.GetModel();
-                string tag = await sourceModel.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
-
-                Position pEnd;
-                if (Helpers.IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
-                else pEnd = await Helpers.getEndOfTag(AppState.tagName, dec.Value, sourceModel);
-
-                BlazorMonaco.Range range = new BlazorMonaco.Range()
-                {
-                    StartColumn = dec.Value.StartColumn,
-                    StartLineNumber = dec.Value.StartLineNumber,
-                    EndColumn = pEnd.Column,
-                    EndLineNumber = pEnd.LineNumber
-                };
-                currentRangeId = await Helpers.ColorRange(_editorSource, range, currentRangeId, enmStatusColor.Current);
-                currentDec = dec;
-            }
-
-        }
+        await Helpers.markWholeTag(AppState.tagName, eventArg, _editorSource, sourceDecorations);
     }
+
     private void OnContextMenuTarget(EditorMouseEvent eventArg)
     {
         Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
@@ -254,7 +220,7 @@
             return;
         }
 
-        KeyValuePair<string, BlazorMonaco.Range> dec = currentDec;
+        KeyValuePair<string, BlazorMonaco.Range> dec =Helpers.currentDec;
         if (!string.IsNullOrEmpty(dec.Key))
         {
             BlazorMonaco.Range decRange = dec.Value;
