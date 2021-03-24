@@ -49,10 +49,8 @@
     private string lblChooseLookup = "Choose Lookup";
     private Dictionary<string, string> dicLookup = new Dictionary<string, string>();
     private Dictionary<string, BlazorMonaco.Range> sourceDecorations = new Dictionary<string, BlazorMonaco.Range>();
-
-    [CascadingParameter] public IModalService Modal { get; set; }
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
-
+    [CascadingParameter] public IModalService Modal { get; set; }
 
     static void ValidationEventHandler(object sender, ValidationEventArgs e)
     {
@@ -87,7 +85,6 @@
         await Helpers.Download(lblSource, AppState, Modal, _editorSource, js, false);
     }
 
-
     private async Task Lookup()
     {
         AppState.isWorking();
@@ -101,7 +98,9 @@
         {
             doReplace = false;
             string tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
+            Console.WriteLine(tag);
             XmlDocument node = new XmlDocument();
+            XmlAttribute newAttrib = null;
             bool emptyTag = Helpers.IsClosedTag(tag);
             if (emptyTag) node.LoadXml(tag);
             else node.LoadXml($"{tag}</{AppState.tagName}>");
@@ -109,26 +108,27 @@
             switch (AppState.OpMode)
             {
                 case enmOpMode.NewAttribLookup:
+                    foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
+                    {
+                        if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has old value as key
+                        {
+                            doReplace = true;
+                            newAttrib = node.CreateAttribute(AppState.newAttribName);
+                            newAttrib.Value = dicLookup[attrb.Value];//use new value
+                        }
+                    }
+                    //add attrib after the loop on attribs...
+                    if (doReplace) node.DocumentElement.SetAttributeNode(newAttrib);
                     break;
                 case enmOpMode.ChangeAttribLookup:
                     foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                     {
-                        try
+                        if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has old value as key
                         {
-                            if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has old value as key
-                            {
-                                attrb.Value = dicLookup[attrb.Value];//change to new value
-                                doReplace = true;
-                            }
+                            attrb.Value = dicLookup[attrb.Value];//change to new value
+                            doReplace = true;
                         }
-                        catch (Exception e)
-                        {
-
-                            throw;
-                        }
-
                     }
-
                     break;
                 case enmOpMode.AttribLookupContents:
                     break;
@@ -159,7 +159,7 @@
 
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
-        await Helpers.markWholeTag(  AppState.tagName, eventArg, _editorSource, sourceDecorations);
+        await Helpers.markWholeTag(AppState.tagName, eventArg, _editorSource, sourceDecorations);
     }
 
     private void OnContextMenuSource(EditorMouseEvent eventArg)

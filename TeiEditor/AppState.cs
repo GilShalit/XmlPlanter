@@ -56,7 +56,7 @@ namespace TeiEditor
             hiddenClass = "hidden";
             count = 0;
 
-            tagName = "seg";
+            tagName = "placeName";
             attribName = "xml:id";
             newAttribName = "ref";
             attribStartVal = 1;

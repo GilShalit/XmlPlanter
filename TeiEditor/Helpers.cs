@@ -36,20 +36,21 @@ namespace TeiEditor
     {
         static public List<string> validationErrors = new List<string>();
         static public XmlSchemaSet schemaSet = new XmlSchemaSet();
-        static private string currentRangeId ;
+        static private string currentRangeId;
         static public KeyValuePair<string, BlazorMonaco.Range> currentDec;
 
         public static async Task markWholeTag(
             string tagName,
-            EditorMouseEvent eventArg,MonacoEditor editor,
+            EditorMouseEvent eventArg, MonacoEditor editor,
             Dictionary<string, BlazorMonaco.Range> sourceDecorations)
         {
             {
                 if (eventArg.Event.LeftButton)
                 {
                     Position pClick = eventArg.Target.Position;
+                    //problem returns a range if single-line and not clicked inside...
                     KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
-                                                                    where d.Value.StartLineNumber <= pClick.LineNumber && d.Value.EndLineNumber >= pClick.LineNumber
+                                                                    where d.Value.StartLineNumber <= pClick.LineNumber && d.Value.EndLineNumber >= pClick.LineNumber 
                                                                     select d).FirstOrDefault();
 
                     if (string.IsNullOrEmpty(dec.Key))
@@ -83,7 +84,7 @@ namespace TeiEditor
 
         }
 
-        public static async Task Download(string filename,AppState AppState,IModalService Modal,MonacoEditor editor, IJSRuntime js,bool twoEditorForm)
+        public static async Task Download(string filename, AppState AppState, IModalService Modal, MonacoEditor editor, IJSRuntime js, bool twoEditorForm)
         {
             AppState.Message = filename;
             ModalOptions options = new ModalOptions() { HideCloseButton = true };
@@ -118,9 +119,11 @@ namespace TeiEditor
             List<string> lines = await model.GetLinesContent();
             int endTagCol = -1;
             while (l < lines.Count)
-            {
-                endTagCol = lines[l - 1].IndexOf(endTag);
-                if (endTagCol > -1) break;
+            {//problem if previous tag closes on the same line before the start of current tag
+                if (l == tagRange.EndLineNumber) endTagCol = lines[l - 1].IndexOf(endTag, tagRange.EndColumn - 1);//searching on first line
+                else endTagCol = lines[l - 1].IndexOf(endTag);
+
+                if (endTagCol > -1 && endTagCol>tagRange.EndColumn) break;
                 l++;
             }
             return new Position() { Column = endTagCol + endTag.Length + 1, LineNumber = l };
@@ -235,7 +238,7 @@ namespace TeiEditor
             doc = JsonDocument.Parse(t);
             return doc.RootElement;
         }
-        
+
         public static async Task<BlazorMonaco.Range> ExpandTagRange(BlazorMonaco.Range matchRange, TextModel model)
         {
             BlazorMonaco.Range newRange = new BlazorMonaco.Range()
@@ -245,21 +248,41 @@ namespace TeiEditor
             };
 
             int tagCloseLine = matchRange.EndLineNumber;
-            string line = await model.GetLineContent(tagCloseLine);
-            int tagCloseCol = line.IndexOf(">", matchRange.EndColumn - 1);
-            if (tagCloseCol == -1) //not found
-            {
-                tagCloseLine++;
-                line = await model.GetLineContent(tagCloseLine);
-                tagCloseCol = line.IndexOf(">");
-            }
-            tagCloseCol = tagCloseCol + 2;
+            //string line = await model.GetLineContent(tagCloseLine);
+            //int tagCloseCol = line.IndexOf(">", matchRange.EndColumn - 1);
+            //if (tagCloseCol == -1) //not found
+            //{
+            //    tagCloseLine++;
+            //    line = await model.GetLineContent(tagCloseLine);
+            //    tagCloseCol = line.IndexOf(">");
+            //}
 
-            newRange.EndColumn = tagCloseCol;
-            newRange.EndLineNumber = tagCloseLine;
+            //tagCloseCol = tagCloseCol + 2;
+
+            Position endPos = await getClosingPosition(model, matchRange.EndLineNumber, matchRange.EndColumn - 1);
+            newRange.EndColumn = endPos.Column;
+            newRange.EndLineNumber = endPos.LineNumber;
 
             return newRange;
+
+            async Task<Position> getClosingPosition(TextModel model, int lineNum, int colNum)
+            {
+                Position pos = new Position();
+                string line = await model.GetLineContent(lineNum);
+                int tagCloseCol = line.IndexOf(">", colNum);
+                if (tagCloseCol == -1) //not found
+                {
+                    pos = await getClosingPosition(model, lineNum + 1, 0);
+                }
+                else
+                {
+                    pos.Column = tagCloseCol + 2;
+                    pos.LineNumber = lineNum;
+                }
+                return pos;
+            }
         }
+
 
         public static async Task LoadXMLfromFile(MonacoEditor editor, IBrowserFile file)
         {
