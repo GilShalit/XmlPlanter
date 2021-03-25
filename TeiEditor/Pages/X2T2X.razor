@@ -5,6 +5,7 @@
 @using System.Text
 @using System.Xml;
 @using System.Xml.Schema;
+@using System.Text.Json;
 
 @inject IJSRuntime js
 @inject HttpClient _client
@@ -93,6 +94,7 @@
         await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
         bool doReplace;
         int topLineNotFound = -1;
+        string sNewAttrib = ""; string sOldAttrib = "";
 
         foreach (KeyValuePair<string, BlazorMonaco.Range> dec in sourceDecorations)
         {
@@ -100,7 +102,6 @@
             string tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
             Console.WriteLine(tag);
             XmlDocument node = new XmlDocument();
-            XmlAttribute newAttrib = null;
             bool emptyTag = Helpers.IsClosedTag(tag);
             if (emptyTag) node.LoadXml(tag);
             else node.LoadXml($"{tag}</{AppState.tagName}>");
@@ -113,20 +114,21 @@
                         if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has old value as key
                         {
                             doReplace = true;
-                            newAttrib = node.CreateAttribute(AppState.newAttribName);
-                            newAttrib.Value = dicLookup[attrb.Value];//use new value
+                            sNewAttrib = $" {AppState.newAttribName}=\"{dicLookup[attrb.Value]}\"";
+                            if (emptyTag) tag = tag.Replace("/>", $"{sNewAttrib}/>");
+                            else tag = tag.Replace(">", $"{sNewAttrib}>");
                         }
                     }
-                    //add attrib after the loop on attribs...
-                    if (doReplace) node.DocumentElement.SetAttributeNode(newAttrib);
                     break;
                 case enmOpMode.ChangeAttribLookup:
                     foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                     {
                         if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has old value as key
                         {
-                            attrb.Value = dicLookup[attrb.Value];//change to new value
                             doReplace = true;
+                            sNewAttrib = $" {attrb.Name}=\"{dicLookup[attrb.Value]}\"";
+                            sOldAttrib = $" {attrb.Name}=\"{attrb.Value}\"";
+                            tag = tag.Replace(sOldAttrib, sNewAttrib);
                         }
                     }
                     break;
@@ -136,17 +138,25 @@
 
             if (doReplace)
             {
-                if (emptyTag) tag = node.OuterXml;
-                else tag = node.OuterXml.Substring(0, node.OuterXml.IndexOf("</"));
                 await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
                 await _editorSource.SetSelection(dec.Value);
-
-                //ugly hack:
-                await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(" ", enmTagChanges.DoNothing));//replace with " "
-                BlazorMonaco.Range range = dec.Value;
-                range.EndColumn = range.StartColumn; //range on ""
-                await _editorSource.SetSelection(range); //select " "
                 await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.DoNothing)); //replace with new tag
+                string lastLine = await model.GetLineContent(dec.Value.EndLineNumber);
+                int badCol = lastLine.IndexOf(">>");
+                if (badCol > -1)
+                {
+                    BlazorMonaco.Range range = new BlazorMonaco.Range() { StartLineNumber = dec.Value.EndLineNumber, EndLineNumber = dec.Value.EndLineNumber, StartColumn = badCol+1, EndColumn = badCol + 3};
+                    await _editorSource.SetSelection(range);
+                    await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(">", enmTagChanges.DoNothing)); //replace with new tag
+                }
+
+                @*                //ugly hack:
+                    await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(" ", enmTagChanges.DoNothing));//replace with " "
+                    BlazorMonaco.Range range = dec.Value;
+                    range.EndColumn = range.StartColumn; //range on ""
+                    await _editorSource.SetSelection(range); //select " "
+                    await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.DoNothing)); //replace with new tag
+                *@
             }
             else
             {

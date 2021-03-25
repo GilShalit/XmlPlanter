@@ -242,7 +242,7 @@ namespace TeiEditor
                 case enmTagChanges.DoNothing:
                     break;
             }
-            Text = Text.Replace("\"", "\\\"");
+            Text = Text.Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n");
             var t = $"{{\"text\": \"{Text}\"}}";
             JsonDocument doc;
             doc = JsonDocument.Parse(t);
