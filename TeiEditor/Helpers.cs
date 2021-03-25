@@ -39,6 +39,17 @@ namespace TeiEditor
         static private string currentRangeId;
         static public KeyValuePair<string, BlazorMonaco.Range> currentDec;
 
+        public static bool IsPosInRange(Position position,BlazorMonaco.Range range)
+        {
+            //before or after range lines
+            if (position.LineNumber < range.StartLineNumber || position.LineNumber > range.EndLineNumber) return false;
+            //on first range line before range start column 
+            if (position.LineNumber == range.StartLineNumber && position.Column < range.StartColumn) return false;
+            //on last range line after last range column
+            if (position.LineNumber == range.EndLineNumber && position.Column > range.EndColumn) return false;
+            return true; //all else
+        }
+
         public static async Task markWholeTag(
             string tagName,
             EditorMouseEvent eventArg, MonacoEditor editor,
@@ -48,9 +59,8 @@ namespace TeiEditor
                 if (eventArg.Event.LeftButton)
                 {
                     Position pClick = eventArg.Target.Position;
-                    //problem returns a range if single-line and not clicked inside...
                     KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
-                                                                    where d.Value.StartLineNumber <= pClick.LineNumber && d.Value.EndLineNumber >= pClick.LineNumber 
+                                                                    where IsPosInRange(pClick,d.Value)
                                                                     select d).FirstOrDefault();
 
                     if (string.IsNullOrEmpty(dec.Key))
@@ -248,23 +258,13 @@ namespace TeiEditor
             };
 
             int tagCloseLine = matchRange.EndLineNumber;
-            //string line = await model.GetLineContent(tagCloseLine);
-            //int tagCloseCol = line.IndexOf(">", matchRange.EndColumn - 1);
-            //if (tagCloseCol == -1) //not found
-            //{
-            //    tagCloseLine++;
-            //    line = await model.GetLineContent(tagCloseLine);
-            //    tagCloseCol = line.IndexOf(">");
-            //}
-
-            //tagCloseCol = tagCloseCol + 2;
-
             Position endPos = await getClosingPosition(model, matchRange.EndLineNumber, matchRange.EndColumn - 1);
             newRange.EndColumn = endPos.Column;
             newRange.EndLineNumber = endPos.LineNumber;
 
             return newRange;
 
+            //local non static recursive method 
             async Task<Position> getClosingPosition(TextModel model, int lineNum, int colNum)
             {
                 Position pos = new Position();
