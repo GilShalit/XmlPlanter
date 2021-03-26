@@ -282,6 +282,8 @@
                 else targetSel.EndColumn += tag.Length + 1;//closing tag adds '/'
             }
 
+            //Problem: may need to move subsequent tag
+
             //paint source for done
             await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
 
