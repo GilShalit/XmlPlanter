@@ -75,8 +75,8 @@ namespace TeiEditor
                         string tag = await sourceModel.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
 
                         Position pEnd;
-                        if (Helpers.IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
-                        else pEnd = await Helpers.getEndOfTag(tagName, dec.Value, sourceModel);
+                        if (IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
+                        else pEnd = await getEndOfTag(tagName, dec.Value, sourceModel);
 
                         BlazorMonaco.Range range = new BlazorMonaco.Range()
                         {
@@ -133,7 +133,7 @@ namespace TeiEditor
                 if (l == tagRange.EndLineNumber) endTagCol = lines[l - 1].IndexOf(endTag, tagRange.EndColumn - 1);//searching on first line
                 else endTagCol = lines[l - 1].IndexOf(endTag);
 
-                if (endTagCol > -1 && endTagCol>tagRange.EndColumn) break;
+                if (endTagCol > -1 ) break;
                 l++;
             }
             return new Position() { Column = endTagCol + endTag.Length + 1, LineNumber = l };

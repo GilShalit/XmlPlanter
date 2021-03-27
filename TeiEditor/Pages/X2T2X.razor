@@ -96,17 +96,21 @@
         int topLineNotFound = -1;
         string sNewAttrib = ""; string sOldAttrib = "";
         int lastLineChange;
+        string tag, fullTag;
+        Position pEnd; BlazorMonaco.Range range;
 
         foreach (KeyValuePair<string, BlazorMonaco.Range> dec in sourceDecorations)
         {
             doReplace = false;
             lastLineChange = 0;
-            string tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
-            Console.WriteLine(tag);
+            tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
+            bool closedTag = Helpers.IsClosedTag(tag);
             XmlDocument node = new XmlDocument();
-            bool emptyTag = Helpers.IsClosedTag(tag);
-            if (emptyTag) node.LoadXml(tag);
-            else node.LoadXml($"{tag}</{AppState.tagName}>");
+            if (AppState.OpMode != enmOpMode.AttribLookupContents)
+            {// for AttribLookupContents will load in switch below
+                if (closedTag) node.LoadXml(tag);
+                else node.LoadXml($"{tag}</{AppState.tagName}>");
+            }
 
             switch (AppState.OpMode)
             {
@@ -118,7 +122,7 @@
                             doReplace = true;
                             sNewAttrib = $" {AppState.newAttribName}=\"{dicLookup[attrb.Value]}\"";
                             lastLineChange = sNewAttrib.Length; //change in tag length that may affect next tag if on the same line
-                            if (emptyTag) tag = tag.Replace("/>", $"{sNewAttrib}/>");
+                            if (closedTag) tag = tag.Replace("/>", $"{sNewAttrib}/>");
                             else tag = tag.Replace(">", $"{sNewAttrib}>");
                         }
                     }
@@ -140,6 +144,32 @@
                     }
                     break;
                 case enmOpMode.AttribLookupContents:
+                    if (!closedTag)//only if tag has content
+                    {
+                        pEnd = await Helpers.getEndOfTag(AppState.tagName, dec.Value, model);
+                        range = new BlazorMonaco.Range()
+                        {
+                            StartLineNumber = dec.Value.StartLineNumber,
+                            StartColumn = dec.Value.StartColumn,
+                            EndLineNumber = pEnd.LineNumber,
+                            EndColumn = pEnd.Column
+                        };
+                        fullTag = await model.GetValueInRange(range, EndOfLinePreference.CRLF);//with tag contents
+                        Console.WriteLine(fullTag);
+
+                        node.LoadXml(fullTag);
+                        if (node.InnerText=="שלביטרא די רומא")
+                        {
+                            Console.WriteLine("x");
+                        }
+                        if (dicLookup.ContainsKey(node.InnerText))
+                        {
+                            doReplace = true;
+                            sNewAttrib = $" {AppState.newAttribName}=\"{dicLookup[node.InnerText]}\"";
+                            lastLineChange = sNewAttrib.Length; //change in tag length that may affect next tag if on the same line
+                            tag = tag.Replace(">", $"{sNewAttrib}>");
+                        }
+                    }
                     break;
             }
 
@@ -164,7 +194,7 @@
                 int badCol = lastLine.IndexOf(">>");
                 if (badCol > -1)
                 {
-                    BlazorMonaco.Range range = new BlazorMonaco.Range() { StartLineNumber = dec.Value.EndLineNumber, EndLineNumber = dec.Value.EndLineNumber, StartColumn = badCol + 1, EndColumn = badCol + 3 };
+                    range = new BlazorMonaco.Range() { StartLineNumber = dec.Value.EndLineNumber, EndLineNumber = dec.Value.EndLineNumber, StartColumn = badCol + 1, EndColumn = badCol + 3 };
                     await _editorSource.SetSelection(range);
                     await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(">", enmTagChanges.DoNothing)); //replace with new tag
                 }
@@ -246,7 +276,7 @@
         Helpers.validationErrors = new List<string>();
         await _editorSource.SetValue("");
 
-        AppState.OpMode = enmOpMode.NewAttribLookup;
+        AppState.OpMode = enmOpMode.AttribLookupContents;
         AppState.PageMode = enmPage.X2T2X;
 
         AppState.notWorking();
