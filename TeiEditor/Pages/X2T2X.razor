@@ -73,7 +73,8 @@
         return new StandaloneEditorConstructionOptions
         {
             GlyphMargin = true,
-            AutomaticLayout = true
+            AutomaticLayout = true,
+            WordWrap = "on"
         };
     }
 
@@ -161,7 +162,7 @@
                         Console.WriteLine(fullTag);
 
                         node.LoadXml(fullTag);
-                        if (node.InnerText=="שלביטרא די רומא")
+                        if (node.InnerText == "שלביטרא די רומא")
                         {
                             Console.WriteLine("x");
                         }
@@ -283,6 +284,8 @@
 
         AppState.OpMode = enmOpMode.AttribLookupContents;
         AppState.PageMode = enmPage.X2T2X;
+
+        await Helpers.ensureLoadedSchemas(_client);
 
         AppState.notWorking();
     }

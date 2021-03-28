@@ -327,6 +327,17 @@ namespace TeiEditor
             schemaSet.Add(nameSpace, xmlSchemaReader);
         }
 
+        public static async Task ensureLoadedSchemas(HttpClient _client)
+        {
+            if (schemaSet.Count == 0)
+            {
+                await loadSchema("data/tei_all.xsd", "http://www.tei-c.org/ns/1.0", _client);
+                await loadSchema("data/tei_all_dcr.xsd", "http://www.isocat.org/ns/dcr", _client);
+                await loadSchema("data/tei_all_teix.xsd", "http://www.tei-c.org/ns/Examples", _client);
+                await loadSchema("data/tei_all_xml.xsd", "http://www.w3.org/XML/1998/namespace", _client);
+            }
+        }
+
         public static async Task ValidateXML(AppState appState, IModalService Modal,
             MonacoEditor editor, ValidationEventHandler eventHandler)
         {
