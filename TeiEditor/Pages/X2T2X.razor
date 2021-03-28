@@ -6,6 +6,7 @@
 @using System.Xml;
 @using System.Xml.Schema;
 @using System.Text.Json;
+@using System.Diagnostics;
 
 @inject IJSRuntime js
 @inject HttpClient _client
@@ -90,6 +91,8 @@
     {
         AppState.isWorking();
         await Task.Delay(5);
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
         TextModel model = await _editorSource.GetModel();
         await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
         bool doReplace;
@@ -204,6 +207,8 @@
                 if (topLineNotFound == -1) topLineNotFound = dec.Value.StartLineNumber;//capture first not found line
             }
         }
+        sw.Stop();
+        Console.WriteLine(sw.Elapsed);
         if (topLineNotFound != -1) await _editorSource.RevealLineInCenter(topLineNotFound);
         AppState.notWorking();
     }
