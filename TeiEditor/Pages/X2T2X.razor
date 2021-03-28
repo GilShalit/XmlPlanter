@@ -15,23 +15,27 @@
     <div class="row">
         <div class="col">
             <div class="row" style="margin-bottom:5px">
-                <div class="col-1 file-input-zone" style="padding-left:0;padding-right:0">
+                <div class="col-2 file-input-zone" style="padding-left:0;padding-right:0">
                     <InputFile OnChange="@OnSourceFileChange" accept=".xml" />
                     @lblChooseSource
                 </div>
                 <div class="col-3" style="padding-top:3px!important">@lblSource</div>
-                <div class="col-1 file-input-zone" style="padding-left:0;padding-right:0">
+                <div class="col-2 file-input-zone" style="padding-left:0;padding-right:0">
                     <InputFile OnChange="@OnLookupFileChange" accept=".tsv" />
                     @lblChooseLookup
                 </div>
                 <div class="col-3" style="padding-top:3px!important">@lblLookup</div>
 
                 <div class="col-1">
-                    <button @onclick="Lookup" class="myButton">Lookup</button>
-                </div>
-                <div class="col-3">
-                    <button @onclick="ValidateXML" class="myButton">Validate</button>
-                    <button @onclick="Download" class="myButton">Save</button>
+                    <Dropdown TItem="string" OnSelected="@OnCommandSelected">
+                        <InitialTip>Actions</InitialTip>
+                        <ChildContent>
+                            <DropdownListItem Item="@actionList[0]">Lookup</DropdownListItem>
+                            <div class="dropdown-divider"></div>
+                            <DropdownListItem Item="@actionList[1]">Validate</DropdownListItem>
+                            <DropdownListItem Item="@actionList[2]">Save</DropdownListItem>
+                        </ChildContent>
+                    </Dropdown>
                 </div>
             </div>
             <div class="row">
@@ -53,6 +57,7 @@
     private Dictionary<string, BlazorMonaco.Range> sourceDecorations = new Dictionary<string, BlazorMonaco.Range>();
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
     [CascadingParameter] public IModalService Modal { get; set; }
+    string[] actionList = new string[3] { "lookup", "validate", "save" };
 
     static void ValidationEventHandler(object sender, ValidationEventArgs e)
     {
@@ -76,6 +81,16 @@
             AutomaticLayout = true,
             WordWrap = "on"
         };
+    }
+
+    private async void OnCommandSelected(string action)
+    {
+        switch (action)
+        {
+            case "lookup":await Lookup(); break;
+            case "validate":await ValidateXML(); break;
+            case "save":await Download(); break;
+        }
     }
 
     private async Task ValidateXML()

@@ -20,11 +20,11 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		BuildVersion_UpdateFileVersion = True
-		BuildVersion_ConfigurationName = Debug
-		BuildVersion_BuildVersioningStyle = Increment.Increment.Increment.Increment
-		BuildVersion_UpdateAssemblyVersion = True
-		BuildVersion_StartDate = 2000/1/1
 		SolutionGuid = {82564CE9-4B74-44F4-84C3-198CF815222C}
+		BuildVersion_StartDate = 2000/1/1
+		BuildVersion_UpdateAssemblyVersion = True
+		BuildVersion_BuildVersioningStyle = Increment.Increment.Increment.Increment
+		BuildVersion_ConfigurationName = Debug
+		BuildVersion_UpdateFileVersion = True
 	EndGlobalSection
 EndGlobal

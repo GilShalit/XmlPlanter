@@ -19,8 +19,17 @@
                     @lblChooseSource
                 </div>
                 <div class="col-5" style="padding-top:3px!important">@lblSource</div>
-                <div class="col-3">
-                    <button @onclick="markTags" class="myButton">Mark</button>
+                <div class="col-1">
+                    <Dropdown TItem="string" OnSelected="@OnSourceCommandSelected">
+                        <InitialTip>Actions</InitialTip>
+                        <ChildContent>
+                            <DropdownListItem Item="@actionList[0]">Mark</DropdownListItem>
+                            <div class="dropdown-divider"></div>
+                            <DropdownListItem Item="@actionList[1]">Validate</DropdownListItem>
+                            <DropdownListItem Item="@actionList[2]">Save</DropdownListItem>
+                        </ChildContent>
+                    </Dropdown>
+
                 </div>
             </div>
             <div class="row">
@@ -36,10 +45,15 @@
                     <InputFile OnChange="@OnTargetFileChange" accept=".xml" />
                     @lblChooseTarget
                 </div>
-                <div class="col-4" style="padding-top:3px!important">@lblTarget</div>
-                <div class="col-4">
-                    <button @onclick="ValidateXML" class="myButton">Validate</button>
-                    <button @onclick="Download" class="myButton">Save</button>
+                <div class="col-5" style="padding-top:3px!important">@lblTarget</div>
+                <div class="col-1">
+                    <Dropdown TItem="string" OnSelected="@OnTargetCommandSelected">
+                        <InitialTip>Actions</InitialTip>
+                        <ChildContent>
+                            <DropdownListItem Item="@actionList[1]">Validate</DropdownListItem>
+                            <DropdownListItem Item="@actionList[2]">Save</DropdownListItem>
+                        </ChildContent>
+                    </Dropdown>
                 </div>
             </div>
             <div class="row">
@@ -63,6 +77,27 @@
     private string lblChooseTarget = "Choose Target";
     ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
     [CascadingParameter] public IModalService Modal { get; set; }
+    string[] actionList = new string[3] { "mark", "validate", "save" };
+
+
+    private async void OnTargetCommandSelected(string action)
+    {
+        switch (action)
+        {
+            case "validate": await ValidateXML(_editorTarget); break;
+            case "save": await Download(lblTarget, _editorTarget); break;
+        }
+    }
+
+    private async void OnSourceCommandSelected(string action)
+    {
+        switch (action)
+        {
+            case "mark": await markTags(); break;
+            case "validate": await ValidateXML(_editorSource); break;
+            case "save": await Download(lblSource, _editorSource); break;
+        }
+    }
 
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
     {
@@ -70,7 +105,7 @@
         {
             GlyphMargin = true,
             AutomaticLayout = true,
-            WordWrap="on"
+            WordWrap = "on"
         };
     }
 
@@ -159,9 +194,9 @@
             null, null, "navigation", 1.5, (editor, keyCodes) => CopyTagWNew());
     }
 
-    private async Task ValidateXML()
+    private async Task ValidateXML(MonacoEditor editor)
     {
-        await Helpers.ValidateXML(AppState, Modal, _editorTarget, eventHandler);
+        await Helpers.ValidateXML(AppState, Modal, editor, eventHandler);
     }
 
     static void ValidationEventHandler(object sender, ValidationEventArgs e)
@@ -178,9 +213,9 @@
         Helpers.validationErrors.Add(e.Message);
     }
 
-    private async Task Download()
+    private async Task Download(string lbl, MonacoEditor editor)
     {
-        await Helpers.Download(lblTarget, AppState, Modal, _editorTarget, js, true);
+        await Helpers.Download(lbl, AppState, Modal, editor, js, true);
     }
 
     private async Task markTags()
@@ -214,7 +249,7 @@
             return;
         }
 
-        KeyValuePair<string, BlazorMonaco.Range> dec =Helpers.currentDec;
+        KeyValuePair<string, BlazorMonaco.Range> dec = Helpers.currentDec;
         if (!string.IsNullOrEmpty(dec.Key))
         {
             BlazorMonaco.Range decRange = dec.Value;
