@@ -46,7 +46,7 @@ namespace TeiEditor
         public enmOpMode OpMode { get; set; }
         public enmPage PageMode { get; set; }
         public string Message { get; set; }
-        private int count;
+        private int processCount;
 
 
         public event Action OnChange;
@@ -54,7 +54,7 @@ namespace TeiEditor
         public AppState()
         {
             hiddenClass = "hidden";
-            count = 0;
+            processCount = 0;
 
             tagName = "placeName";
             attribName = "xml:id";
@@ -64,14 +64,14 @@ namespace TeiEditor
 
         public void isWorking()
         {
-            count = count + 1;
-            hiddenClass = count > 0 ? "" : "hidden";
+            processCount = processCount + 1;
+            hiddenClass = processCount > 0 ? "" : "hidden";
             NotifyStateChanged();
         }
         public void notWorking()
         {
-            count = count - 1;
-            hiddenClass = count > 0 ? "" : "hidden";
+            processCount = processCount - 1;
+            hiddenClass = processCount > 0 ? "" : "hidden";
             NotifyStateChanged();
             //Console.WriteLine($"not Working {hiddenClass} {count}");
         }
