@@ -39,7 +39,7 @@ namespace TeiEditor
         static private string currentRangeId;
         static public KeyValuePair<string, BlazorMonaco.Range> currentDec;
 
-        public static bool IsPosInRange(Position position,BlazorMonaco.Range range)
+        public static bool IsPosInRange(Position position, BlazorMonaco.Range range)
         {
             //before or after range lines
             if (position.LineNumber < range.StartLineNumber || position.LineNumber > range.EndLineNumber) return false;
@@ -59,7 +59,7 @@ namespace TeiEditor
                 if (isLeftButton)
                 {
                     KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
-                                                                  where IsPosInRange(pClick,d.Value)
+                                                                    where IsPosInRange(pClick, d.Value)
                                                                     select d).FirstOrDefault();
 
                     if (string.IsNullOrEmpty(dec.Key))
@@ -136,7 +136,7 @@ namespace TeiEditor
                 if (l == tagRange.EndLineNumber) endTagCol = lines[l - 1].IndexOf(endTag, tagRange.EndColumn - 1);//searching on first line
                 else endTagCol = lines[l - 1].IndexOf(endTag);
 
-                if (endTagCol > -1 ) break;
+                if (endTagCol > -1) break;
                 l++;
             }
             return new Position() { Column = endTagCol + endTag.Length + 1, LineNumber = l };
@@ -178,7 +178,7 @@ namespace TeiEditor
                 {
                     sourceDecorations.Add(decorations[i], sourceMatches[i].Range);
                 }
-                await editor.RevealLineInCenter(sourceMatches[0].Range.StartLineNumber);
+                await editor.RevealRangeInCenter(sourceMatches[0].Range);
             }
         }
 

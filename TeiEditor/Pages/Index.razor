@@ -156,8 +156,8 @@
 
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
-        await Helpers.markWholeTag(AppState.tagName, 
-        eventArg.Target.Position,eventArg.Event.LeftButton,
+        await Helpers.markWholeTag(AppState.tagName,
+        eventArg.Target.Position, eventArg.Event.LeftButton,
         _editorSource, sourceDecorations);
     }
 
@@ -236,7 +236,7 @@
         AppState.notWorking();
     }
 
-    private async Task CopyTag(bool newTagVal = false,bool moveToNext=false)
+    private async Task CopyTag(bool newTagVal = false, bool moveToNext = false)
     {
         string msg = "";
         switch (AppState.OpMode)
@@ -324,12 +324,45 @@
 
             //paint target for done
             await Helpers.ColorRange(_editorTarget, targetSel);
+
+            if (moveToNext)
+            {
+                //select next marked tag
+                KeyValuePair<string, BlazorMonaco.Range> nextDec = getNextDec(dec);
+                if (!string.IsNullOrEmpty(nextDec.Key))
+                {
+                    Position nextPos = new Position() { LineNumber = nextDec.Value.StartLineNumber, Column = nextDec.Value.StartColumn };
+                    await Helpers.markWholeTag(AppState.tagName, nextPos, true, _editorSource, sourceDecorations);
+                    await _editorSource.RevealRangeInCenter(nextDec.Value);
+                }
+            }
         }
+    }
+
+    private KeyValuePair<string, BlazorMonaco.Range> getNextDec(KeyValuePair<string, BlazorMonaco.Range> currentDec)
+    {
+        KeyValuePair<string, BlazorMonaco.Range> nextDec = new KeyValuePair<string, BlazorMonaco.Range>();
+        int nextI = 0;
+
+        for (int i = 0; i < sourceDecorations.Keys.Count; i++)
+        {
+            if (sourceDecorations.ElementAt(i).Key == currentDec.Key)
+            {
+                nextI = i + 1;
+                break;
+            }
+        }
+        if (nextI < sourceDecorations.Keys.Count)
+        {
+            nextDec = sourceDecorations.ElementAt(nextI);
+        }
+
+        return nextDec;
     }
 
     private async void CopyTagAndMove()
     {
-        await CopyTag(moveToNext:true);
+        await CopyTag(moveToNext: true);
     }
 
     private async void CopyTagWNew()
@@ -339,6 +372,6 @@
 
     private async void CopyTagWNewAndMove()
     {
-        await CopyTag(newTagVal: true, moveToNext:true);
+        await CopyTag(newTagVal: true, moveToNext: true);
     }
 }
