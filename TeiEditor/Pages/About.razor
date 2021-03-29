@@ -11,24 +11,30 @@
 @inject AppState AppState
 <div class="container-fluid" style="max-width:900px;background-color:lightgray">
     <div class="row w-100 text-center">
-        <div class="col"  style="padding-top:20px">
-            <img src="images/e-lijah.jfif";
+        <div class="col" style="padding-top:20px">
+            <img src="images/e-lijah.jfif" />
         </div>
     </div>
-    <div class="row w-100 text-center" >
-        <div class="col" style="font-size:larger">
+    <div class="row w-100 align-items-center" style="padding-top:20px">
+        <div class="col-8 offset-1" style="font-size:3rem">
             About XmlPlanter
         </div>
-    </div>
-    <div class="row">
-        <div class="col" style=" font-size:large">
+        <div class="col-3" style=" font-size:1.5rem;">
             Version=@version
+        </div>
+    </div>
+    <div class="row w-100 align-items-center" style="padding-top:20px;padding-bottom:20px">
+        <div class="col-3 offset-1" style=" font-size:2rem;">
+            <a href="https://www.dh-dev.com" target="_blank"><img src="images\logo_white_background.jpg" style="max-width:100px;height:auto"/></a>
+        </div>
+        <div class="col " style="font-size:2rem">
+            Built by: <a href="https://www.dh-dev.com" target="_blank">DHDev (DH-Dev.com)</a>
         </div>
     </div>
 </div>
 @code {
     string version;
-    protected  override void OnInitialized()
+    protected override void OnInitialized()
     {
         version = GetType().Assembly.GetName().Version.ToString();
     }
