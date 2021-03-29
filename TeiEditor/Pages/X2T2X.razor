@@ -231,7 +231,9 @@
 
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
-        await Helpers.markWholeTag(AppState.tagName, eventArg, _editorSource, sourceDecorations);
+        await Helpers.markWholeTag(AppState.tagName, 
+        eventArg.Target.Position,eventArg.Event.LeftButton,
+        _editorSource, sourceDecorations);
     }
 
     private void OnContextMenuSource(EditorMouseEvent eventArg)

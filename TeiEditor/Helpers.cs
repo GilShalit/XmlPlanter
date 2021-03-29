@@ -52,15 +52,14 @@ namespace TeiEditor
 
         public static async Task markWholeTag(
             string tagName,
-            EditorMouseEvent eventArg, MonacoEditor editor,
+            Position pClick, bool isLeftButton, MonacoEditor editor,
             Dictionary<string, BlazorMonaco.Range> sourceDecorations)
         {
             {
-                if (eventArg.Event.LeftButton)
+                if (isLeftButton)
                 {
-                    Position pClick = eventArg.Target.Position;
                     KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
-                                                                    where IsPosInRange(pClick,d.Value)
+                                                                  where IsPosInRange(pClick,d.Value)
                                                                     select d).FirstOrDefault();
 
                     if (string.IsNullOrEmpty(dec.Key))

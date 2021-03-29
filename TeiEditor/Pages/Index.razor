@@ -156,7 +156,9 @@
 
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
-        await Helpers.markWholeTag(AppState.tagName, eventArg, _editorSource, sourceDecorations);
+        await Helpers.markWholeTag(AppState.tagName, 
+        eventArg.Target.Position,eventArg.Event.LeftButton,
+        _editorSource, sourceDecorations);
     }
 
     private void OnContextMenuTarget(EditorMouseEvent eventArg)
@@ -189,9 +191,15 @@
         await _editorTarget.AddAction("CopyTag", "Copy Tag with Attributes",
             new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_S },
             null, null, "navigation", 1.5, (editor, keyCodes) => CopyTag());
+        await _editorTarget.AddAction("CopyTagMoveNext", "Copy Tag with Attributes & Move to Next",
+            new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_D },
+            null, null, "navigation", 1.5, (editor, keyCodes) => CopyTagAndMove());
         await _editorTarget.AddAction("CopyTagWNewAttrib", "Copy Tag with New Attribute",
             new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_N },
             null, null, "navigation", 1.5, (editor, keyCodes) => CopyTagWNew());
+        await _editorTarget.AddAction("CopyTagWNewAttribMoveNext", "Copy Tag with New Attribute & Move to Next",
+            new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_M },
+            null, null, "navigation", 1.5, (editor, keyCodes) => CopyTagWNewAndMove());
     }
 
     private async Task ValidateXML(MonacoEditor editor)
@@ -228,7 +236,7 @@
         AppState.notWorking();
     }
 
-    private async Task CopyTag(bool newTagVal = false)
+    private async Task CopyTag(bool newTagVal = false,bool moveToNext=false)
     {
         string msg = "";
         switch (AppState.OpMode)
@@ -319,8 +327,18 @@
         }
     }
 
+    private async void CopyTagAndMove()
+    {
+        await CopyTag(moveToNext:true);
+    }
+
     private async void CopyTagWNew()
     {
         await CopyTag(newTagVal: true);
+    }
+
+    private async void CopyTagWNewAndMove()
+    {
+        await CopyTag(newTagVal: true, moveToNext:true);
     }
 }
