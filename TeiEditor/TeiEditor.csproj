@@ -10,7 +10,7 @@
         <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
     <InvariantGlobalization>true</InvariantGlobalization> If the app doesn't require localization, you may configure the app to support the invariant culture -->
     <UseSystemResourceKeys>false</UseSystemResourceKeys>
-    <AssemblyVersion>0.8.1.2</AssemblyVersion>
+    <AssemblyVersion>0.8.1.3</AssemblyVersion>
 
   </PropertyGroup>
   
