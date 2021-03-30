@@ -12,23 +12,148 @@
 <div class="container-fluid" style="max-width:900px;background-color:lightgray">
     <div class="row w-100 text-center">
         <div class="col" style="padding-top:20px">
-            <img src="images/e-lijah.jfif" />
-        </div>
-    </div>
-    <div class="row w-100 align-items-center" style="padding-top:20px">
-        <div class="col-8 offset-1" style="font-size:3rem">
-            About XmlPlanter
-        </div>
-        <div class="col-3" style=" font-size:1.5rem;">
-            Version=@version
+            <a href="https://elijahlab.haifa.ac.il/about/?lang=en" target="_blank">
+                <img src="images/e-lijah.jfif" />
+            </a>
         </div>
     </div>
     <div class="row w-100 align-items-center" style="padding-top:20px;padding-bottom:20px">
         <div class="col-3 offset-1" style=" font-size:2rem;">
-            <a href="https://www.dh-dev.com" target="_blank"><img src="images\logo_white_background.jpg" style="max-width:100px;height:auto"/></a>
+            <a href="https://www.dh-dev.com" target="_blank"><img src="images\logo_white_background.jpg" style="max-width:100px;height:auto" /></a>
         </div>
         <div class="col " style="font-size:2rem">
             Built by: <a href="https://www.dh-dev.com" target="_blank">DHDev (DH-Dev.com)</a>
+        </div>
+    </div>
+    <div class="row w-100 align-items-center" style="padding-top:20px;padding-bottom:20px">
+        <div class="col-8 offset-1" style="font-size:2.2rem">
+            About XmlPlanter
+        </div>
+        <div class="col-3" style="font-size:1.5rem;">
+            Version=@version
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            The XML Planter is a work environment which serves to complement and facilitate XML-TEI editing without having to code. Its two modes are XML2XML - a tool that assists the creation of parallel editions, and XML2TSV2XML: a lookup tool which enables replacing or adding attributes to TEI elements.
+        </div>
+    </div>
+    <div class="row" style="padding-top:20px;font-size:1.5rem;">
+        <div class="col">
+            Xml2Xml
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            In the creation of parallel editions, whether they are a source and its translation, different witnesses or any other pairs of versions that share common elements, the annotation work requires going back and forth between the source - an already annotated version and a target edition which one wishes to align to the source.  Copying XML elements and their attributes can be cumbersome, and even more so when one of the versions is written Right-to-Left.  The XML2XML planter enables a smooth workflow of transferring information between editions:
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <ul>
+                <li>
+                    select the source and target version;
+                </li>
+                <li>
+                    Configure: select the element tags which are to be copied and whether the attributes from the source, or new random attributes should be added to the copied element in the target;
+                </li>
+                <li>
+                    in the sources actions button, choose “mark”. This will highlight all source elements to be copied;
+                </li>
+                <li>
+                    In the source text, click the highlighted tag that you wish to copy;
+                </li>
+                <li>
+                    Mark the respective text in the target and choose (with right click option or keyboard shortcuts) whether to give the new element the same attribute (shift+s) or create a new one (shift +n) according to the mode you chose in the configuration dialogue;
+                </li>
+                <li>
+                    In the same right click menu (or using the shortcut shift+d, you can also select the option of selecting and highlighting the next elements in the source (shift+d, shift+m);
+                </li>
+                <li>
+                    Clicking “save” in either source or target panes will open the option of renaming your file and will download it;
+                </li>
+                <li>
+                    At any stage, you can validate the source and/or target files by clicking ‘validate’ through the ‘action’ button.
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="row" style="font-size:1.5rem;">
+        <div class="col">
+            Xml2Tsv2Xml
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            This tool enables automatically feeding, or replacing, values to attributes in an XML-TEI edition in several simple steps:
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <ul>
+                <li>
+                    Upload the source XML file;
+                </li>
+                <li>
+                    Configure by choosing one of the following modes:
+                    <ol type="a">
+                        <li>
+                            add a new attribute with values based on the value of a selected attribute
+                        </li>
+                        <li>
+                            replace the value of a selected attribute in a selected element with a new value;
+                        </li>
+                        <li>
+                            add a new attribute with values based on the content of a selected element
+                        </li>
+                    </ol>
+                </li>
+                <li>
+                    For option a, fill in the element you wish to edit, the attribute that you wish to add, and upload a TSV file with two columns: on the left, the value of the existing attribute, on the right, the value you wish to give to the new attribute.
+                </li>
+                <li>
+                    For option b, fill in the element you wish to edit and the attribute with the value you wish to replace, upload a TSV file with two columns: the current value on the left, and the value to replace it with, on the right.
+                </li>
+                <li>
+                    For option c, fill in the element you wish to edit, the attribute that you wish to add, and upload a TSV file with two columns: on the left, the element content, on the right, the value you wish to give the attribute.
+                </li>
+                <li>
+                    By selecting 'lookup' from 'actions', the values will be added or replaced, the elements which were changed will be highlighted in green, those that remain unchanged will be highlighted in Yellow.
+                </li>
+                <li>
+                    Clicking 'save' in either source or target panes will open the option of renaming your file and will download it;
+                </li>
+                <li>
+                    At any stage, you can validate the source and/or target files by clicking ‘validate’ through the ‘actions’ button.
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="row" style="font-size:1.5rem;">
+        <div class="col">
+            Technical Details
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <ul>
+                <li>
+                    All tsv lookup files should have two columns separated by a tab.  No empty lines or lines with only one of the values should be included.  The first line should have headings and is always ignored.
+                </li>
+                <li>
+                    XML validation is based on the TEI (Text Encoding Initiative) with the namespace: https://tei-c.org/ns/1.0/ .
+                </li>
+                <li>
+                    The code for this tool can be found at <a href="https://github.com/GilShalit/XmlPlanter" target="_blank">https://github.com/GilShalit/XmlPlanter</a> and can be cloned or forked freely.
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col text-center">
+            <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">
+                <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" />
+            </a>&nbsp;&nbsp; This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
         </div>
     </div>
 </div>

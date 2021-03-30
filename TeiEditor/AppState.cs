@@ -20,13 +20,13 @@ namespace TeiEditor
         CopyTagWithNewAttribs = 2,
 
         [Display(Name = "NewAttribLookup")]
-        [Description("Add new attribute based on a different attribute lookup")]
+        [Description("Add a new attribute with values based on the value of a selected attribute")]
         NewAttribLookup = 3,
         [Display(Name = "ChangeAttribLookup")]
-        [Description("Change attribute value based on existing value lookup")]
+        [Description("Replace the value of a selected attribute in a selected element with a new value")]
         ChangeAttribLookup = 4,
         [Display(Name = "AttribLookupContents")]
-        [Description("Add new attribute based on a tag contents lookup")]
+        [Description("Add a new attribute with values based on the content of a selected element")]
         AttribLookupContents = 5
     }
 
