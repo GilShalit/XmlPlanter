@@ -177,10 +177,7 @@
                         Console.WriteLine(fullTag);
 
                         node.LoadXml(fullTag);
-                        if (node.InnerText == "שלביטרא די רומא")
-                        {
-                            Console.WriteLine("x");
-                        }
+
                         if (dicLookup.ContainsKey(node.InnerText))
                         {
                             doReplace = true;

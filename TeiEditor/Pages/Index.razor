@@ -263,6 +263,7 @@
             BlazorMonaco.Range decRange = dec.Value;
             TextModel sourceModel = await _editorSource.GetModel();
             string tag = await sourceModel.GetValueInRange(decRange, EndOfLinePreference.CRLF);
+            tag = tag.Replace("\t", "").Replace("\r", "").Replace("\n", "");
             if (newTagVal)
             {
                 XmlDocument node = new XmlDocument();
@@ -281,7 +282,6 @@
             Selection targetSel = await _editorTarget.GetSelection();
             Position targetStartPos = new Position()
             {
-
                 Column = targetSel.StartColumn,
                 LineNumber = targetSel.StartLineNumber,
             };
