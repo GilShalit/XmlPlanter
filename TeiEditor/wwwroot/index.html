@@ -26,7 +26,7 @@
 </head>
 
 <body>
-    <div id="app" ><div class="text-center" style="margin-top:30px">Preparing XmlPlanter...</div></div>
+    <div id="app"><div class="text-center" style="margin-top:30px">Preparing XmlPlanter...</div></div>
 
     <div id="blazor-error-ui">
         An unhandled error has occurred.
@@ -41,6 +41,18 @@
     <script src="_framework/blazor.webassembly.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
     <script src="_content/Blazored.Modal/blazored.modal.js"></script>
+
+    <script>
+        (() => {
+        // warn before closing 
+            addEventListener("beforeunload", (evt) => {
+                const unsaved_changes_warning = "Changes you made may not be saved.";
+                evt.returnValue = unsaved_changes_warning;
+                return unsaved_changes_warning;
+            });
+        })();
+
+    </script>
 </body>
 
 </html>
