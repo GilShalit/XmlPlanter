@@ -41,6 +41,7 @@ namespace TeiEditor
 
         public static bool IsPosInRange(Position position, BlazorMonaco.Range range)
         {
+            if (position == null || range == null) return false;//happens when the Monaco editor search is used
             //before or after range lines
             if (position.LineNumber < range.StartLineNumber || position.LineNumber > range.EndLineNumber) return false;
             //on first range line before range start column 
