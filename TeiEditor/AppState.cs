@@ -19,7 +19,7 @@ namespace TeiEditor
         [Description("Copy tag with new attribute")]
         CopyTagWithNewAttribs = 2,
         [Display(Name = "AlignSelectedTag")]
-        [Description("Align clicked tag on both windows according to ttribute value")]
+        [Description("Align clicked tag on both windows according to attribute value")]
         AlignSelectedTag = 7,
 
         [Display(Name = "NewAttribLookup")]

@@ -58,7 +58,7 @@
             </div>
             <div class="row">
                 <div class="col" style="padding-left: 0 !important">
-                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="OnDidInitTarget" OnContextMenu="OnContextMenuTarget" /> @*onDidChangeCursorSelection="onDidChangeCursorSelectionTarget" />*@
+                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="OnDidInitTarget" OnContextMenu="OnContextMenuTarget" OnMouseDown="onMouseDownTarget"/> @*onDidChangeCursorSelection="onDidChangeCursorSelectionTarget" />*@
                 </div>
             </div>
         </div>
@@ -170,14 +170,43 @@
                 if (!string.IsNullOrEmpty(attribVal))
                 {
                     string otherKey = targetLookup.Where(d => d.Value == attribVal).Select(d => d.Key).FirstOrDefault();
-                    await _editorTarget.RevealRangeInCenter(targetDecorations[otherKey]);
-                    
-                    await Helpers.RemoveDecoration(_editorTarget, Helpers.otherRangeId);//remove previous colorin on other editor
-                    Helpers.otherRangeId = await Helpers.ColorRange(_editorTarget, targetDecorations[otherKey], "", enmStatusColor.Current);
-                    return;
+                    if (!string.IsNullOrEmpty(otherKey))
+                    {
+                        await _editorTarget.RevealRangeInCenter(targetDecorations[otherKey]);
+                        await Helpers.RemoveDecoration(_editorTarget, Helpers.otherRangeId);//remove previous colorin on other editor
+                        Helpers.otherRangeId = await Helpers.ColorRange(_editorTarget, targetDecorations[otherKey], "", enmStatusColor.Current);
+                        return;
+                    }
                 }
             }
             await Helpers.RemoveDecoration(_editorTarget, Helpers.otherRangeId);
+        }
+    }
+    private async void onMouseDownTarget(EditorMouseEvent eventArg)
+    {
+
+        if (AppState.OpMode == enmOpMode.AlignSelectedTag)
+        {
+            await Helpers.markWholeTag(AppState.tagName,
+                eventArg.Target.Position, eventArg.Event.LeftButton,
+                _editorTarget, targetDecorations,true);
+
+            if (Helpers.otherDec.Key != null)
+            {
+                string attribVal = targetLookup.Where(d => d.Key == Helpers.otherDec.Key).Select(d => d.Value).FirstOrDefault();
+                if (!string.IsNullOrEmpty(attribVal))
+                {
+                    string otherKey = sourceLookup.Where(d => d.Value == attribVal).Select(d => d.Key).FirstOrDefault();
+                    if (!string.IsNullOrEmpty(otherKey))
+                    {
+                        await _editorSource.RevealRangeInCenter(sourceDecorations[otherKey]);
+                        await Helpers.RemoveDecoration(_editorSource, Helpers.currentRangeId);//remove previous colorin on other editor
+                        Helpers.currentRangeId = await Helpers.ColorRange(_editorSource, sourceDecorations[otherKey], "", enmStatusColor.Current);
+                        return;
+                    }
+                }
+            }
+            await Helpers.RemoveDecoration(_editorSource, Helpers.currentRangeId);
         }
     }
 

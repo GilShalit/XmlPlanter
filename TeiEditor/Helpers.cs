@@ -36,9 +36,10 @@ namespace TeiEditor
     {
         static public List<string> validationErrors = new List<string>();
         static public XmlSchemaSet schemaSet = new XmlSchemaSet();
-        static private string currentRangeId;
+        static public string currentRangeId;
         static public string otherRangeId;
         static public KeyValuePair<string, BlazorMonaco.Range> currentDec;
+        static public KeyValuePair<string, BlazorMonaco.Range> otherDec;
 
         public static bool IsPosInRange(Position position, BlazorMonaco.Range range)
         {
@@ -57,7 +58,7 @@ namespace TeiEditor
         public static async Task markWholeTag(
             string tagName,
             Position pClick, bool isLeftButton, MonacoEditor editor,
-            Dictionary<string, BlazorMonaco.Range> sourceDecorations)
+            Dictionary<string, BlazorMonaco.Range> sourceDecorations,Boolean isFromTarget=false)
         {
             if (isLeftButton)
             {
@@ -87,8 +88,16 @@ namespace TeiEditor
                         EndColumn = pEnd.Column,
                         EndLineNumber = pEnd.LineNumber
                     };
-                    currentRangeId = await Helpers.ColorRange(editor, range, currentRangeId, enmStatusColor.Current);
-                    currentDec = dec;
+                    if (isFromTarget)
+                    {
+                        otherRangeId = await Helpers.ColorRange(editor, range, otherRangeId, enmStatusColor.Current);
+                        otherDec = dec;
+                    }
+                    else
+                    {
+                        currentRangeId = await Helpers.ColorRange(editor, range, currentRangeId, enmStatusColor.Current);
+                        currentDec = dec;
+                    }
                 }
             }
         }
