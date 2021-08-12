@@ -110,7 +110,7 @@
         int lastLineChange;
         string tag, fullTag;
         Position pEnd; BlazorMonaco.Range range;
-        int runningValue = 1;
+        int runningValue = AppState.attribStartVal;
 
         foreach (KeyValuePair<string, BlazorMonaco.Range> dec in sourceDecorations)
         {

@@ -42,6 +42,8 @@ namespace TeiEditor
         public static bool IsPosInRange(Position position, BlazorMonaco.Range range)
         {
             if (position == null || range == null) return false;//happens when the Monaco editor search is used
+            //not implemented... return range.containsPosition(position);
+
             //before or after range lines
             if (position.LineNumber < range.StartLineNumber || position.LineNumber > range.EndLineNumber) return false;
             //on first range line before range start column 
@@ -148,20 +150,40 @@ namespace TeiEditor
             return tag.IndexOf("/>") != -1;
         }
 
-        public static async Task markTags(MonacoEditor editor, string tag,
-            Dictionary<string, BlazorMonaco.Range> sourceDecorations)
+        public static async Task<Dictionary<string,string>> GetDecorationTagAttribs(string tagName, string attribName, 
+            MonacoEditor editor, Dictionary<string, BlazorMonaco.Range> dicDecorations)
         {
-            sourceDecorations.Clear();
-            TextModel sourceModel = await editor.GetModel();
-            List<FindMatch> sourceMatches;
-            await editor.ResetDeltaDecorations();
+            Dictionary<string, string> TagAttribs = new Dictionary<string, string>();
+            TextModel model = await editor.GetModel();
+            foreach (KeyValuePair<string, BlazorMonaco.Range> dec in dicDecorations)
+            {
+                string tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
+                bool closedTag = Helpers.IsClosedTag(tag);
+                XmlDocument node = new XmlDocument();
+                if (closedTag) node.LoadXml(tag);
+                else node.LoadXml($"{tag}</{tagName}>");
+                foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
+                {
+                    if (attrb.Name == attribName) TagAttribs.Add(attrb.Value, dec.Key);//decortion key is the value here
+                }
+            }
+            return TagAttribs;
+        }
+        public static async Task markTags(MonacoEditor editor, string tag,
+            Dictionary<string, BlazorMonaco.Range> dicDecorations)
+        {
             List<ModelDeltaDecoration> lstDecorations = new List<ModelDeltaDecoration>();
+            dicDecorations.Clear();
+            TextModel sourceModel = await editor.GetModel();
+            await editor.ResetDeltaDecorations();
+            List<FindMatch> sourceMatches;
+
             sourceMatches = await sourceModel.FindMatches($"<{tag}", false, false, false, null, true, 10000);
             if (sourceMatches.Count > 0)
             {
                 foreach (FindMatch m in sourceMatches)
                 {
-                    m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel);
+                    m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel);//change range to hold complete tag
                     lstDecorations.Add(new ModelDeltaDecoration
                     {
                         Range = m.Range,
@@ -174,10 +196,10 @@ namespace TeiEditor
                         }
                     });
                 }
-                string[] decorations = await editor.DeltaDecorations(null, lstDecorations.ToArray());
+                string[] decorations = await editor.DeltaDecorations(null, lstDecorations.ToArray());//decoration keys
                 for (int i = 0; i < sourceMatches.Count; i++)
                 {
-                    sourceDecorations.Add(decorations[i], sourceMatches[i].Range);
+                    dicDecorations.Add(decorations[i], sourceMatches[i].Range);
                 }
                 await editor.RevealRangeInCenter(sourceMatches[0].Range);
             }

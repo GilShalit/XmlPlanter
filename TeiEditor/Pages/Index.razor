@@ -23,7 +23,7 @@
                     <Dropdown TItem="string" OnSelected="@OnSourceCommandSelected">
                         <InitialTip>Actions</InitialTip>
                         <ChildContent>
-                            <DropdownListItem Item="@actionList[0]">Mark</DropdownListItem>
+                            <DropdownListItem Item="@actionList[0]">Highlight</DropdownListItem>
                             <div class="dropdown-divider"></div>
                             <DropdownListItem Item="@actionList[1]">Validate</DropdownListItem>
                             <DropdownListItem Item="@actionList[2]">Save</DropdownListItem>
@@ -70,7 +70,9 @@
     //private List<string> lTargetLines = new List<string>();
     //private string ValueToSet { get; set; }
     private Dictionary<string, BlazorMonaco.Range> sourceDecorations = new Dictionary<string, BlazorMonaco.Range>();
-    private string[] decorationIdsTarget;
+    private Dictionary<string, BlazorMonaco.Range> targetDecorations = new Dictionary<string, BlazorMonaco.Range>();
+    private Dictionary<string, string> sourceLookup = new Dictionary<string, string>();//<attrib value, decoration key>
+    private Dictionary<string, string> targetLookup = new Dictionary<string, string>();//<attrib value, decoration key>
     private string lblSource = "";
     private string lblChooseSource = "Choose Source";
     private string lblTarget = "";
@@ -157,8 +159,15 @@
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
         await Helpers.markWholeTag(AppState.tagName,
-        eventArg.Target.Position, eventArg.Event.LeftButton,
-        _editorSource, sourceDecorations);
+            eventArg.Target.Position, eventArg.Event.LeftButton,
+            _editorSource, sourceDecorations);
+
+        if (AppState.OpMode == enmOpMode.AlignSelectedTag)
+        {
+
+            //await _editorTarget.RevealRangeInCenter(sourceMatches[0].Range);
+
+        }
     }
 
     private void OnContextMenuTarget(EditorMouseEvent eventArg)
@@ -232,6 +241,12 @@
         await Task.Delay(1);
 
         await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
+        if (AppState.OpMode == enmOpMode.AlignSelectedTag)
+        {
+            await Helpers.markTags(_editorTarget, AppState.tagName, targetDecorations);
+            sourceLookup = await Helpers.GetDecorationTagAttribs(AppState.tagName, AppState.attribName, _editorSource, sourceDecorations);
+            targetLookup = await Helpers.GetDecorationTagAttribs(AppState.tagName, AppState.attribName, _editorTarget, targetDecorations);
+        }
 
         AppState.notWorking();
     }

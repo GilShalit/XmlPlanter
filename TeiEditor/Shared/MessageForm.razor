@@ -10,6 +10,9 @@
             <option value=@Extensions.GetEnumDisplayName(enmOpMode.CopyTagWithNewAttribs)>
                 @Extensions.GetDescription(enmOpMode.CopyTagWithNewAttribs)
             </option>
+            <option value=@Extensions.GetEnumDisplayName(enmOpMode.AlignSelectedTag)>
+                @Extensions.GetDescription(enmOpMode.AlignSelectedTag)
+            </option>
         </select>
         <select @bind="OpMode" class="@X2T2XHidden">
             <option value=@Extensions.GetEnumDisplayName(enmOpMode.NewAttribLookup)>
@@ -99,6 +102,13 @@
                     NewAttributeHidden = hidden;
                     attribStartHidden = "";
                     break;
+                case "AlignSelectedTag":
+                    //AppState.OpMode = enmOpMode.AlignSelectedTag;
+                    TagHidden = "";
+                    AttributeHidden = "";
+                    NewAttributeHidden = hidden;
+                    attribStartHidden = hidden;
+                    break;
 
                 case "NewAttribLookup":
                     //AppState.OpMode = enmOpMode.NewAttribLookup;
@@ -128,7 +138,7 @@
                     TagHidden = "";
                     AttributeHidden = "";
                     NewAttributeHidden = hidden;
-                    attribStartHidden = hidden;
+                    attribStartHidden = "";
                     break;
             }
         }
