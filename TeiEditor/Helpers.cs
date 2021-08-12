@@ -233,6 +233,14 @@ namespace TeiEditor
             return decorations[0];
         }
 
+        public static string OpenTag(string tag)
+        {
+            return tag.Replace("/>", ">");
+        }
+        public static string CloseTag(string tag)
+        {
+            return tag.Replace(">", "/>");
+        }
         public static JsonElement TagToJson(string Text, enmTagChanges tagChange)
         {
             switch (tagChange)

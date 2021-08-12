@@ -174,9 +174,16 @@
                             EndColumn = pEnd.Column
                         };
                         fullTag = await model.GetValueInRange(range, EndOfLinePreference.CRLF);//with tag contents
-                        Console.WriteLine(fullTag);
+                        try
+                        {
+                            node.LoadXml(fullTag);
+                        }
+                        catch (Exception)
+                        {
+                            Console.WriteLine(fullTag);
 
-                        node.LoadXml(fullTag);
+                            throw;
+                        }
 
                         if (dicLookup.ContainsKey(node.InnerText))
                         {
@@ -192,8 +199,20 @@
             if (doReplace)
             {
                 await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
-                await _editorSource.SetSelection(dec.Value);
-                await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(tag, enmTagChanges.DoNothing)); //replace with new tag
+
+                List<Selection> lSelections = new List<Selection>() {
+                   new Selection(){
+                   StartLineNumber=dec.Value.EndLineNumber,
+                   EndLineNumber=dec.Value.EndLineNumber,
+                   StartColumn=dec.Value.EndColumn,
+                   EndColumn=dec.Value.EndColumn
+                   }};
+                List<IdentifiedSingleEditOperation> lOpEd = new List<IdentifiedSingleEditOperation>() {
+                    new IdentifiedSingleEditOperation() {
+                        Range = dec.Value,
+                        Text = tag}
+                };
+                await _editorSource.ExecuteEdits("source", lOpEd, lSelections);
 
                 if (lastLineChange != 0)
                 {//may need to move following tags if on the last line of current tag
@@ -205,15 +224,6 @@
                     }
                 }
 
-                //ugly hack to overcome the '>>' at the end of replaced tags
-                string lastLine = await model.GetLineContent(dec.Value.EndLineNumber);
-                int badCol = lastLine.IndexOf(">>");
-                if (badCol > -1)
-                {
-                    range = new BlazorMonaco.Range() { StartLineNumber = dec.Value.EndLineNumber, EndLineNumber = dec.Value.EndLineNumber, StartColumn = badCol + 1, EndColumn = badCol + 3 };
-                    await _editorSource.SetSelection(range);
-                    await _editorSource.Trigger("keyboard", "type", Helpers.TagToJson(">", enmTagChanges.DoNothing)); //replace with new tag
-                }
             }
             else
             {
@@ -228,7 +238,7 @@
 
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
-        await Helpers.markWholeTag(AppState.tagName, 
+        await Helpers.markWholeTag(AppState.tagName,
         eventArg.Target.Position,eventArg.Event.LeftButton,
         _editorSource, sourceDecorations);
     }
@@ -308,4 +318,4 @@
     {
         await js.InvokeVoidAsync("showCurrentNav", "X2T2XNav");
     }
-  }
+}
