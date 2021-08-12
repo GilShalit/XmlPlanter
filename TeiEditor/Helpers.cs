@@ -69,8 +69,16 @@ namespace TeiEditor
                 if (string.IsNullOrEmpty(dec.Key))
                 {
                     //clicking outside a marked tag - clear previous selection in currentRangeID
-                    await Helpers.RemoveDecoration(editor, currentRangeId);
-                    currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
+                    if (isFromTarget)
+                    {
+                        await Helpers.RemoveDecoration(editor, otherRangeId);
+                        otherDec = new KeyValuePair<string, BlazorMonaco.Range>();
+                    }
+                    else
+                    {
+                        await Helpers.RemoveDecoration(editor, currentRangeId);
+                        currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
+                    }
                 }
                 else
                 {

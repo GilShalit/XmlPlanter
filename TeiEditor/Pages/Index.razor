@@ -58,7 +58,7 @@
             </div>
             <div class="row">
                 <div class="col" style="padding-left: 0 !important">
-                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="OnDidInitTarget" OnContextMenu="OnContextMenuTarget" OnMouseDown="onMouseDownTarget"/> @*onDidChangeCursorSelection="onDidChangeCursorSelectionTarget" />*@
+                    <MonacoEditor @ref="_editorTarget" Id="editor-target" ConstructionOptions="EditorConstructionOptions" OnDidInit="OnDidInitTarget" OnContextMenu="OnContextMenuTarget" OnMouseDown="onMouseDownTarget" /> @*onDidChangeCursorSelection="onDidChangeCursorSelectionTarget" />*@
                 </div>
             </div>
         </div>
@@ -156,6 +156,30 @@
         // requires an implementation of MonacoEditorBase.createContextKey
     }
 
+    private async Task<string> align(string key1,
+        Dictionary<string, string> lookup1, Dictionary<string, string> lookup2,
+        MonacoEditor editor, Dictionary<string, BlazorMonaco.Range> decorations,
+        string RangeId)
+    {
+        if (key1 != null)
+        {
+            string attribVal = lookup1.Where(d => d.Key == key1).Select(d => d.Value).FirstOrDefault();
+            if (!string.IsNullOrEmpty(attribVal))
+            {
+                string key2 = lookup2.Where(d => d.Value == attribVal).Select(d => d.Key).FirstOrDefault();
+                if (!string.IsNullOrEmpty(key2))
+                {
+                    await editor.RevealRangeInCenter(decorations[key2]);
+                    await Helpers.RemoveDecoration(editor, RangeId);//remove previous colorin on other editor
+                    RangeId = await Helpers.ColorRange(editor, decorations[key2], "", enmStatusColor.Current);
+                    return RangeId;
+                }
+            }
+        }
+        await Helpers.RemoveDecoration(editor, RangeId);
+        return null;
+    }
+
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
         await Helpers.markWholeTag(AppState.tagName,
@@ -164,24 +188,11 @@
 
         if (AppState.OpMode == enmOpMode.AlignSelectedTag)
         {
-            if (Helpers.currentDec.Key != null)
-            {
-                string attribVal = sourceLookup.Where(d => d.Key == Helpers.currentDec.Key).Select(d => d.Value).FirstOrDefault();
-                if (!string.IsNullOrEmpty(attribVal))
-                {
-                    string otherKey = targetLookup.Where(d => d.Value == attribVal).Select(d => d.Key).FirstOrDefault();
-                    if (!string.IsNullOrEmpty(otherKey))
-                    {
-                        await _editorTarget.RevealRangeInCenter(targetDecorations[otherKey]);
-                        await Helpers.RemoveDecoration(_editorTarget, Helpers.otherRangeId);//remove previous colorin on other editor
-                        Helpers.otherRangeId = await Helpers.ColorRange(_editorTarget, targetDecorations[otherKey], "", enmStatusColor.Current);
-                        return;
-                    }
-                }
-            }
-            await Helpers.RemoveDecoration(_editorTarget, Helpers.otherRangeId);
+            Helpers.otherRangeId = await align(Helpers.currentDec.Key, sourceLookup, targetLookup,
+                _editorTarget, targetDecorations, Helpers.otherRangeId);
         }
     }
+    
     private async void onMouseDownTarget(EditorMouseEvent eventArg)
     {
 
@@ -189,24 +200,10 @@
         {
             await Helpers.markWholeTag(AppState.tagName,
                 eventArg.Target.Position, eventArg.Event.LeftButton,
-                _editorTarget, targetDecorations,true);
+                _editorTarget, targetDecorations, true);
 
-            if (Helpers.otherDec.Key != null)
-            {
-                string attribVal = targetLookup.Where(d => d.Key == Helpers.otherDec.Key).Select(d => d.Value).FirstOrDefault();
-                if (!string.IsNullOrEmpty(attribVal))
-                {
-                    string otherKey = sourceLookup.Where(d => d.Value == attribVal).Select(d => d.Key).FirstOrDefault();
-                    if (!string.IsNullOrEmpty(otherKey))
-                    {
-                        await _editorSource.RevealRangeInCenter(sourceDecorations[otherKey]);
-                        await Helpers.RemoveDecoration(_editorSource, Helpers.currentRangeId);//remove previous colorin on other editor
-                        Helpers.currentRangeId = await Helpers.ColorRange(_editorSource, sourceDecorations[otherKey], "", enmStatusColor.Current);
-                        return;
-                    }
-                }
-            }
-            await Helpers.RemoveDecoration(_editorSource, Helpers.currentRangeId);
+            Helpers.currentRangeId = await align(Helpers.otherDec.Key, targetLookup, sourceLookup,
+                _editorSource, sourceDecorations, Helpers.currentRangeId);
         }
     }
 
