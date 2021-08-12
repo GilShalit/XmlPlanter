@@ -37,6 +37,7 @@ namespace TeiEditor
         static public List<string> validationErrors = new List<string>();
         static public XmlSchemaSet schemaSet = new XmlSchemaSet();
         static private string currentRangeId;
+        static public string otherRangeId;
         static public KeyValuePair<string, BlazorMonaco.Range> currentDec;
 
         public static bool IsPosInRange(Position position, BlazorMonaco.Range range)
@@ -58,42 +59,38 @@ namespace TeiEditor
             Position pClick, bool isLeftButton, MonacoEditor editor,
             Dictionary<string, BlazorMonaco.Range> sourceDecorations)
         {
+            if (isLeftButton)
             {
-                if (isLeftButton)
+                KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
+                                                                where IsPosInRange(pClick, d.Value)
+                                                                select d).FirstOrDefault();
+
+                if (string.IsNullOrEmpty(dec.Key))
                 {
-                    KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
-                                                                    where IsPosInRange(pClick, d.Value)
-                                                                    select d).FirstOrDefault();
+                    //clicking outside a marked tag - clear previous selection in currentRangeID
+                    await Helpers.RemoveDecoration(editor, currentRangeId);
+                    currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
+                }
+                else
+                {
+                    TextModel sourceModel = await editor.GetModel();
+                    string tag = await sourceModel.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
 
-                    if (string.IsNullOrEmpty(dec.Key))
+                    Position pEnd;
+                    if (IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
+                    else pEnd = await getEndOfTag(tagName, dec.Value, sourceModel);
+
+                    BlazorMonaco.Range range = new BlazorMonaco.Range()
                     {
-                        //clicking outside a marked tag - clear previous selection in currentRangeID
-                        await Helpers.RemoveDecoration(editor, currentRangeId);
-                        currentDec = new KeyValuePair<string, BlazorMonaco.Range>();
-                    }
-                    else
-                    {
-                        TextModel sourceModel = await editor.GetModel();
-                        string tag = await sourceModel.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
-
-                        Position pEnd;
-                        if (IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
-                        else pEnd = await getEndOfTag(tagName, dec.Value, sourceModel);
-
-                        BlazorMonaco.Range range = new BlazorMonaco.Range()
-                        {
-                            StartColumn = dec.Value.StartColumn,
-                            StartLineNumber = dec.Value.StartLineNumber,
-                            EndColumn = pEnd.Column,
-                            EndLineNumber = pEnd.LineNumber
-                        };
-                        currentRangeId = await Helpers.ColorRange(editor, range, currentRangeId, enmStatusColor.Current);
-                        currentDec = dec;
-                    }
-
+                        StartColumn = dec.Value.StartColumn,
+                        StartLineNumber = dec.Value.StartLineNumber,
+                        EndColumn = pEnd.Column,
+                        EndLineNumber = pEnd.LineNumber
+                    };
+                    currentRangeId = await Helpers.ColorRange(editor, range, currentRangeId, enmStatusColor.Current);
+                    currentDec = dec;
                 }
             }
-
         }
 
         public static async Task Download(string filename, AppState AppState, IModalService Modal, MonacoEditor editor, IJSRuntime js, bool twoEditorForm)
@@ -150,7 +147,7 @@ namespace TeiEditor
             return tag.IndexOf("/>") != -1;
         }
 
-        public static async Task<Dictionary<string,string>> GetDecorationTagAttribs(string tagName, string attribName, 
+        public static async Task<Dictionary<string, string>> GetDecorationTagAttribs(string tagName, string attribName,
             MonacoEditor editor, Dictionary<string, BlazorMonaco.Range> dicDecorations)
         {
             Dictionary<string, string> TagAttribs = new Dictionary<string, string>();
@@ -164,7 +161,7 @@ namespace TeiEditor
                 else node.LoadXml($"{tag}</{tagName}>");
                 foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                 {
-                    if (attrb.Name == attribName) TagAttribs.Add(attrb.Value, dec.Key);//decortion key is the value here
+                    if (attrb.Name == attribName) TagAttribs.Add(dec.Key, attrb.Value);
                 }
             }
             return TagAttribs;

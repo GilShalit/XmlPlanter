@@ -71,8 +71,8 @@
     //private string ValueToSet { get; set; }
     private Dictionary<string, BlazorMonaco.Range> sourceDecorations = new Dictionary<string, BlazorMonaco.Range>();
     private Dictionary<string, BlazorMonaco.Range> targetDecorations = new Dictionary<string, BlazorMonaco.Range>();
-    private Dictionary<string, string> sourceLookup = new Dictionary<string, string>();//<attrib value, decoration key>
-    private Dictionary<string, string> targetLookup = new Dictionary<string, string>();//<attrib value, decoration key>
+    private Dictionary<string, string> sourceLookup = new Dictionary<string, string>();//<decoration key, attrib value>
+    private Dictionary<string, string> targetLookup = new Dictionary<string, string>();//<decoration key, attrib value>
     private string lblSource = "";
     private string lblChooseSource = "Choose Source";
     private string lblTarget = "";
@@ -164,9 +164,20 @@
 
         if (AppState.OpMode == enmOpMode.AlignSelectedTag)
         {
-
-            //await _editorTarget.RevealRangeInCenter(sourceMatches[0].Range);
-
+            if (Helpers.currentDec.Key != null)
+            {
+                string attribVal = sourceLookup.Where(d => d.Key == Helpers.currentDec.Key).Select(d => d.Value).FirstOrDefault();
+                if (!string.IsNullOrEmpty(attribVal))
+                {
+                    string otherKey = targetLookup.Where(d => d.Value == attribVal).Select(d => d.Key).FirstOrDefault();
+                    await _editorTarget.RevealRangeInCenter(targetDecorations[otherKey]);
+                    
+                    await Helpers.RemoveDecoration(_editorTarget, Helpers.otherRangeId);//remove previous colorin on other editor
+                    Helpers.otherRangeId = await Helpers.ColorRange(_editorTarget, targetDecorations[otherKey], "", enmStatusColor.Current);
+                    return;
+                }
+            }
+            await Helpers.RemoveDecoration(_editorTarget, Helpers.otherRangeId);
         }
     }
 
@@ -247,7 +258,6 @@
             sourceLookup = await Helpers.GetDecorationTagAttribs(AppState.tagName, AppState.attribName, _editorSource, sourceDecorations);
             targetLookup = await Helpers.GetDecorationTagAttribs(AppState.tagName, AppState.attribName, _editorTarget, targetDecorations);
         }
-
         AppState.notWorking();
     }
 
