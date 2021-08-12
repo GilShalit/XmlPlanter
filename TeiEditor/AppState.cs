@@ -27,13 +27,18 @@ namespace TeiEditor
         ChangeAttribLookup = 4,
         [Display(Name = "AttribLookupContents")]
         [Description("Add a new attribute with values based on the content of a selected element")]
-        AttribLookupContents = 5
+        AttribLookupContents = 5,
+
+        [Display(Name = "AddUniqueAttribVal")]
+        [Description("Add a new attribute with unique values")]
+        AddUniqueAttribVal = 6
     }
 
     public enum enmPage
     {
         X2X = 0,
-        X2T2X = 1
+        X2T2X = 1,
+        XmlId=2
     }
 
     public class AppState

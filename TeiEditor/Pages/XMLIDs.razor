@@ -1,0 +1,283 @@
+﻿@page "/XMLIDs"
+
+@using System.IO
+@using System.Net.Http
+@using System.Text
+@using System.Xml;
+@using System.Xml.Schema;
+@using System.Text.Json;
+@using System.Diagnostics;
+
+@inject IJSRuntime js
+@inject HttpClient _client
+@inject AppState AppState
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <div class="row" style="margin-bottom:5px">
+                <div class="col-2 file-input-zone" style="padding-left:0;padding-right:0">
+                    <InputFile OnChange="@OnSourceFileChange" accept=".xml" />
+                    @lblChooseSource
+                </div>
+                <div class="col-3" style="padding-top:3px!important">@lblSource</div>
+
+                <div class="offset-5 col-1">
+                    <Dropdown TItem="string" OnSelected="@OnCommandSelected">
+                        <InitialTip>Actions</InitialTip>
+                        <ChildContent>
+                            <DropdownListItem Item="@actionList[0]">Lookup</DropdownListItem>
+                            <div class="dropdown-divider"></div>
+                            <DropdownListItem Item="@actionList[1]">Validate</DropdownListItem>
+                            <DropdownListItem Item="@actionList[2]">Save</DropdownListItem>
+                        </ChildContent>
+                    </Dropdown>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col" style="padding-left:0!important;">
+                    <MonacoEditor @ref="_editorSource" Id="editor-lookup" ConstructionOptions="EditorConstructionOptions"
+                                  OnDidInit="OnDidInitSource" OnContextMenu="OnContextMenuSource" OnMouseDown="onMouseDownSource" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    private MonacoEditor _editorSource { get; set; }
+    private string lblSource = "";
+    private string lblChooseSource = "Choose Source";
+    private Dictionary<string, string> dicLookup = new Dictionary<string, string>();
+    private Dictionary<string, BlazorMonaco.Range> sourceDecorations = new Dictionary<string, BlazorMonaco.Range>();
+    ValidationEventHandler eventHandler = new ValidationEventHandler(ValidationEventHandler);
+    [CascadingParameter] public IModalService Modal { get; set; }
+    string[] actionList = new string[3] { "lookup", "validate", "save" };
+
+    static void ValidationEventHandler(object sender, ValidationEventArgs e)
+    {
+        switch (e.Severity)
+        {
+            case XmlSeverityType.Error:
+                Console.WriteLine("Error: {0}", e.Message);
+                break;
+            case XmlSeverityType.Warning:
+                Console.WriteLine("Warning {0}", e.Message);
+                break;
+        }
+        Helpers.validationErrors.Add(e.Message);
+    }
+
+    private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
+    {
+        return new StandaloneEditorConstructionOptions
+        {
+            GlyphMargin = true,
+            AutomaticLayout = true,
+            WordWrap = "on"
+        };
+    }
+
+    private async void OnCommandSelected(string action)
+    {
+        switch (action)
+        {
+            case "lookup":await Lookup(); break;
+            case "validate":await ValidateXML(); break;
+            case "save":await Download(); break;
+        }
+    }
+
+    private async Task ValidateXML()
+    {
+        await Helpers.ValidateXML(AppState, Modal, _editorSource, eventHandler);
+    }
+
+    private async Task Download()
+    {
+        await Helpers.Download(lblSource, AppState, Modal, _editorSource, js, false);
+    }
+
+    private async Task Lookup()
+    {
+        AppState.isWorking();
+        await Task.Delay(5);
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
+        TextModel model = await _editorSource.GetModel();
+        await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
+        bool doReplace;
+        int topLineNotFound = -1;
+        string sNewAttrib = ""; string sOldAttrib = "";
+        int lastLineChange;
+        string tag, fullTag;
+        Position pEnd; BlazorMonaco.Range range;
+
+        foreach (KeyValuePair<string, BlazorMonaco.Range> dec in sourceDecorations)
+        {
+            doReplace = false;
+            lastLineChange = 0;
+            tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
+            bool closedTag = Helpers.IsClosedTag(tag);
+            XmlDocument node = new XmlDocument();
+            if (AppState.OpMode != enmOpMode.AttribLookupContents)
+            {// for AttribLookupContents will load in switch below
+                if (closedTag) node.LoadXml(tag);
+                else node.LoadXml($"{tag}</{AppState.tagName}>");
+            }
+
+            switch (AppState.OpMode)
+            {
+                case enmOpMode.NewAttribLookup:
+                    foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
+                    {
+                        if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has attrib value as key
+                        {
+                            doReplace = true;
+                            sNewAttrib = $" {AppState.newAttribName}=\"{dicLookup[attrb.Value]}\"";
+                            lastLineChange = sNewAttrib.Length; //change in tag length that may affect next tag if on the same line
+                            if (closedTag) tag = tag.Replace("/>", $"{sNewAttrib}/>");
+                            else tag = tag.Replace(">", $"{sNewAttrib}>");
+                        }
+                    }
+                    break;
+                case enmOpMode.ChangeAttribLookup:
+                    foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
+                    {
+                        if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has old attrib value as key
+                        {
+                            doReplace = true;
+                            sNewAttrib = $" {attrb.Name}=\"{dicLookup[attrb.Value]}\"";
+                            sOldAttrib = $" {attrb.Name}=\"{attrb.Value}\"";
+                            if (tag.IndexOf("\r\n", tag.IndexOf(sOldAttrib)) == -1)
+                            {//there is no line-break after the attribute so a change in length will affet the following tag if on the same line
+                                lastLineChange = sNewAttrib.Length - sOldAttrib.Length;
+                            }
+                            tag = tag.Replace(sOldAttrib, sNewAttrib);
+                        }
+                    }
+                    break;
+                case enmOpMode.AttribLookupContents:
+                    if (!closedTag)//only if tag has content
+                    {
+                        pEnd = await Helpers.getEndOfTag(AppState.tagName, dec.Value, model);
+                        range = new BlazorMonaco.Range()
+                        {
+                            StartLineNumber = dec.Value.StartLineNumber,
+                            StartColumn = dec.Value.StartColumn,
+                            EndLineNumber = pEnd.LineNumber,
+                            EndColumn = pEnd.Column
+                        };
+                        fullTag = await model.GetValueInRange(range, EndOfLinePreference.CRLF);//with tag contents
+                        try
+                        {
+                            node.LoadXml(fullTag);
+                        }
+                        catch (Exception)
+                        {
+                            Console.WriteLine(fullTag);
+
+                            throw;
+                        }
+
+                        if (dicLookup.ContainsKey(node.InnerText))
+                        {
+                            doReplace = true;
+                            sNewAttrib = $" {AppState.newAttribName}=\"{dicLookup[node.InnerText]}\"";
+                            lastLineChange = sNewAttrib.Length; //change in tag length that may affect next tag if on the same line
+                            tag = tag.Replace(">", $"{sNewAttrib}>");
+                        }
+                    }
+                    break;
+            }
+
+            if (doReplace)
+            {
+                await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
+
+                List<Selection> lSelections = new List<Selection>() {
+                   new Selection(){
+                   StartLineNumber=dec.Value.EndLineNumber,
+                   EndLineNumber=dec.Value.EndLineNumber,
+                   StartColumn=dec.Value.EndColumn,
+                   EndColumn=dec.Value.EndColumn
+                   }};
+                List<IdentifiedSingleEditOperation> lOpEd = new List<IdentifiedSingleEditOperation>() {
+                    new IdentifiedSingleEditOperation() {
+                        Range = dec.Value,
+                        Text = tag}
+                };
+                await _editorSource.ExecuteEdits("source", lOpEd, lSelections);
+
+                if (lastLineChange != 0)
+                {//may need to move following tags if on the last line of current tag
+                    var tagsOnLine = from d in sourceDecorations where d.Value.StartLineNumber == dec.Value.EndLineNumber select d;
+                    foreach (KeyValuePair<string, BlazorMonaco.Range> d in tagsOnLine)
+                    {
+                        d.Value.StartColumn = d.Value.StartColumn + lastLineChange;
+                        if (d.Value.EndLineNumber == dec.Value.EndLineNumber) d.Value.EndColumn = d.Value.EndColumn + lastLineChange;
+                    }
+                }
+
+            }
+            else
+            {
+                if (topLineNotFound == -1) topLineNotFound = dec.Value.StartLineNumber;//capture first not found line
+            }
+        }
+        sw.Stop();
+        Console.WriteLine(sw.Elapsed);
+        if (topLineNotFound != -1) await _editorSource.RevealLineInCenter(topLineNotFound);
+        AppState.notWorking();
+    }
+
+    private async void onMouseDownSource(EditorMouseEvent eventArg)
+    {
+        await Helpers.markWholeTag(AppState.tagName,
+        eventArg.Target.Position,eventArg.Event.LeftButton,
+        _editorSource, sourceDecorations);
+    }
+
+    private void OnContextMenuSource(EditorMouseEvent eventArg)
+    {
+        // To disable menu options according to mode:
+        // https://stackoverflow.com/questions/62001650/how-to-open-context-menu-in-monaco-editor-based-on-line-content-in-angular
+        // requires an implementation of MonacoEditorBase.createContextKey
+        Console.WriteLine("OnContextMenu : " + System.Text.Json.JsonSerializer.Serialize(eventArg));
+    }
+    private async Task OnDidInitSource(MonacoEditorBase editor)
+    {
+        await js.InvokeVoidAsync("registerResize1");
+        var i = await js.InvokeAsync<string>("resizeEditor", "editor-lookup");
+        //sourceDecorations = await DisplayDecoration(_editorSource, 4);
+        // You can now use 'decorationIds' to change or remove the decorations
+    }
+    private async Task OnSourceFileChange(InputFileChangeEventArgs e)
+    {
+        lblSource = e.File.Name;
+        lblChooseSource = "Source: ";
+
+        if (e.File.Size > 512000) lblSource = $"{lblSource} is larger the 500kb!";
+        else await Helpers.LoadXMLfromFile(_editorSource, e.File);
+    }
+
+    protected async override void OnInitialized()
+    {
+        AppState.isWorking();
+        await Task.Delay(1);
+        //await AddCopyTagActions();
+
+        Helpers.validationErrors = new List<string>();
+        await _editorSource.SetValue("");
+
+        AppState.OpMode = enmOpMode.AddUniqueAttribVal;
+        AppState.PageMode = enmPage.XmlId;
+
+        await Helpers.ensureLoadedSchemas(_client);
+
+        AppState.notWorking();
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        await js.InvokeVoidAsync("showCurrentNav", "XMLIDNav");
+    }
+}

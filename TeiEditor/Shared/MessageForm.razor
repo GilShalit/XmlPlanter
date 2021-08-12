@@ -4,10 +4,6 @@
     <div style="margin-bottom:20px;">
         Mode:
         <select @bind="OpMode" class="@X2XHidden">
-            @*            <option value=@Extensions.GetEnumDisplayName(enmOpMode.None)>
-                @Extensions.GetDescription(enmOpMode.None)
-                </option>
-            *@
             <option value=@Extensions.GetEnumDisplayName(enmOpMode.CopyTagWithAttribs)>
                 @Extensions.GetDescription(enmOpMode.CopyTagWithAttribs)
             </option>
@@ -24,6 +20,11 @@
             </option>
             <option value=@Extensions.GetEnumDisplayName(enmOpMode.AttribLookupContents)>
                 @Extensions.GetDescription(enmOpMode.AttribLookupContents)
+            </option>
+        </select>
+        <select @bind="OpMode" class="@XMLIDHidden">
+            <option value=@Extensions.GetEnumDisplayName(enmOpMode.AddUniqueAttribVal)>
+                @Extensions.GetDescription(enmOpMode.AddUniqueAttribVal)
             </option>
         </select>
     </div>
@@ -61,6 +62,7 @@
 
     string X2XHidden { get; set; }
     string X2T2XHidden { get; set; }
+    string XMLIDHidden { get; set; }
 
     string AttributeHidden { get; set; }
     string NewAttributeHidden { get; set; }
@@ -119,6 +121,15 @@
                     NewAttributeHidden = "";
                     attribStartHidden = hidden;
                     break;
+
+
+                case "AddUniqueAttribVal":
+                    //AppState.OpMode = enmOpMode.AddUniqueAttribVal;
+                    TagHidden = "";
+                    AttributeHidden = "";
+                    NewAttributeHidden = hidden;
+                    attribStartHidden = hidden;
+                    break;
             }
         }
     }
@@ -136,10 +147,17 @@
             case enmPage.X2X:
                 X2XHidden = "";
                 X2T2XHidden = hidden;
+                XMLIDHidden = hidden;
                 break;
             case enmPage.X2T2X:
                 X2XHidden = hidden;
                 X2T2XHidden = "";
+                XMLIDHidden = hidden;
+                break;
+            case enmPage.XmlId:
+                X2XHidden = hidden;
+                X2T2XHidden = hidden;
+                XMLIDHidden = "";
                 break;
         }
     }
