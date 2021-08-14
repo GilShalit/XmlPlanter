@@ -29,7 +29,8 @@ namespace TeiEditor
     public enum enmStatusColor
     {
         Done = 0,
-        Current = 1
+        Current = 1,
+        Warning=2
     }
 
     public static class Helpers
@@ -226,7 +227,8 @@ namespace TeiEditor
             await editor.DeltaDecorations(targetID, emptyDec.ToArray());
         }
 
-        public static async Task<string> ColorRange(MonacoEditor editor, BlazorMonaco.Range range, string id = "", enmStatusColor statusColor = enmStatusColor.Done)
+        public static async Task<string> ColorRange(MonacoEditor editor, BlazorMonaco.Range range, string id = "", 
+            enmStatusColor statusColor = enmStatusColor.Done)
         {
             string contentClass = "";
             string GlyphMarginClass = "";
@@ -243,6 +245,11 @@ namespace TeiEditor
                     contentClass = "decorationContentCurrent";
                     GlyphMarginClass = "decorationGlyphMarginCurrent";
                     MiniMapColor = "#bbfaf9";
+                    break;
+                case enmStatusColor.Warning:
+                    contentClass = ".decorationContentWarning";
+                    GlyphMarginClass = ".decorationContentWarning";
+                    MiniMapColor = "#fabbde";
                     break;
             }
 

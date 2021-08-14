@@ -186,21 +186,21 @@
             eventArg.Target.Position, eventArg.Event.LeftButton,
             _editorSource, sourceDecorations);
 
-        if (AppState.OpMode == enmOpMode.AlignSelectedTag)
+        if (AppState.OpMode == enmOpMode.AlignSelectedTag || AppState.OpMode == enmOpMode.FindNoCorresponding)
         {
             Helpers.otherRangeId = await align(Helpers.currentDec.Key, sourceLookup, targetLookup,
                 _editorTarget, targetDecorations, Helpers.otherRangeId);
         }
     }
-    
+
     private async void onMouseDownTarget(EditorMouseEvent eventArg)
     {
 
-        if (AppState.OpMode == enmOpMode.AlignSelectedTag)
+        if (AppState.OpMode == enmOpMode.AlignSelectedTag || AppState.OpMode == enmOpMode.FindNoCorresponding)
         {
             await Helpers.markWholeTag(AppState.tagName,
-                eventArg.Target.Position, eventArg.Event.LeftButton,
-                _editorTarget, targetDecorations, true);
+            eventArg.Target.Position, eventArg.Event.LeftButton,
+            _editorTarget, targetDecorations, true);
 
             Helpers.currentRangeId = await align(Helpers.otherDec.Key, targetLookup, sourceLookup,
                 _editorSource, sourceDecorations, Helpers.currentRangeId);
@@ -278,12 +278,26 @@
         await Task.Delay(1);
 
         await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
-        if (AppState.OpMode == enmOpMode.AlignSelectedTag)
+
+        if (AppState.OpMode == enmOpMode.AlignSelectedTag || AppState.OpMode == enmOpMode.FindNoCorresponding)
         {
             await Helpers.markTags(_editorTarget, AppState.tagName, targetDecorations);
             sourceLookup = await Helpers.GetDecorationTagAttribs(AppState.tagName, AppState.attribName, _editorSource, sourceDecorations);
             targetLookup = await Helpers.GetDecorationTagAttribs(AppState.tagName, AppState.attribName, _editorTarget, targetDecorations);
         }
+
+        if (AppState.OpMode == enmOpMode.FindNoCorresponding)
+        {
+            foreach (KeyValuePair<string, string> attribKey in sourceLookup)
+            {
+                string otherAttrib = targetLookup.Where(k => k.Value == attribKey.Value).Select(k => k.Value).FirstOrDefault();
+                if (string.IsNullOrEmpty(otherAttrib))
+                {
+                    await  Helpers.ColorRange(_editorSource, sourceDecorations[attribKey.Key], attribKey.Key, enmStatusColor.Warning);
+                }
+            }
+        }
+
         AppState.notWorking();
     }
 

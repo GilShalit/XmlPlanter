@@ -21,6 +21,9 @@ namespace TeiEditor
         [Display(Name = "AlignSelectedTag")]
         [Description("Align clicked tag on both windows according to attribute value")]
         AlignSelectedTag = 7,
+        [Display(Name = "FindNoCorresponding")]
+        [Description("Highlight tags that don't have a corresponding value")]
+        FindNoCorresponding = 8,
 
         [Display(Name = "NewAttribLookup")]
         [Description("Add a new attribute with values based on the value of a selected attribute")]

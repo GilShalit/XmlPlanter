@@ -73,6 +73,16 @@ a, .btn-link {
     background: #bbfaf9;
 }
 
+.decorationContentWarning {
+    background: #fabbde;
+    border-radius: 10px;
+    margin-left: 2px !important;
+}
+
+.decorationContentWarning {
+    background: #fabbde;
+}
+
 .decorationGlyphMargin {
     background: yellow;
     border-radius: 10px;

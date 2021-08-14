@@ -13,6 +13,9 @@
             <option value=@Extensions.GetEnumDisplayName(enmOpMode.AlignSelectedTag)>
                 @Extensions.GetDescription(enmOpMode.AlignSelectedTag)
             </option>
+            <option value=@Extensions.GetEnumDisplayName(enmOpMode.FindNoCorresponding)>
+                @Extensions.GetDescription(enmOpMode.FindNoCorresponding)
+            </option>
         </select>
         <select @bind="OpMode" class="@X2T2XHidden">
             <option value=@Extensions.GetEnumDisplayName(enmOpMode.NewAttribLookup)>
@@ -109,12 +112,21 @@
                     NewAttributeHidden = hidden;
                     attribStartHidden = hidden;
                     break;
+                case "FindNoCorresponding":
+                    //AppState.OpMode = enmOpMode.FindNoCorresponding;
+                    TagHidden = "";
+                    AttributeHidden = "";
+                    NewAttributeHidden = "";
+                    newAttribute = "ana";
+                    attribStartHidden = hidden;
+                    break;
 
                 case "NewAttribLookup":
                     //AppState.OpMode = enmOpMode.NewAttribLookup;
                     TagHidden = "";
                     AttributeHidden = "";
                     NewAttributeHidden = "";
+                    newAttribute = "ref";
                     attribStartHidden = hidden;
                     break;
                 case "ChangeAttribLookup":
@@ -129,6 +141,7 @@
                     TagHidden = "";
                     AttributeHidden = hidden;
                     NewAttributeHidden = "";
+                    newAttribute = "ref";
                     attribStartHidden = hidden;
                     break;
 
@@ -158,6 +171,14 @@
                 X2XHidden = "";
                 X2T2XHidden = hidden;
                 XMLIDHidden = hidden;
+                if (OpMode == enmOpMode.FindNoCorresponding)
+                {
+                    newAttribute = "ana";
+                }
+                else
+                {
+                    newAttribute = "ref";
+                }
                 break;
             case enmPage.X2T2X:
                 X2XHidden = hidden;
