@@ -288,29 +288,49 @@
 
         if (AppState.OpMode == enmOpMode.FindNoCorresponding)
         {
-            bool alreadyRevealed = false;
-            foreach (KeyValuePair<string, string> attribKey in sourceLookup)
+            await HighlightMissing(sourceLookup, targetLookup, _editorSource, sourceDecorations);
+            await HighlightMissing(targetLookup, sourceLookup, _editorTarget, targetDecorations);
+        }
+
+        AppState.notWorking();
+    }
+
+    private async Task HighlightMissing(Dictionary<string, string> lookup1,
+                                        Dictionary<string, string> lookup2,
+                                        MonacoEditor editor,
+                                        Dictionary<string, BlazorMonaco.Range> decorations
+                                    )
+    {
+        bool alreadyRevealed = false;
+        bool doAdd;
+        foreach (KeyValuePair<string, string> attribKey in lookup1)
+        {
+            doAdd = true;
+            string otherAttrib = lookup2.Where(k => k.Value == attribKey.Value).Select(k => k.Value).FirstOrDefault();
+            if (string.IsNullOrEmpty(otherAttrib))
             {
-                string otherAttrib = targetLookup.Where(k => k.Value == attribKey.Value).Select(k => k.Value).FirstOrDefault();
-                if (string.IsNullOrEmpty(otherAttrib))
+                TextModel model = await editor.GetModel();
+
+                BlazorMonaco.Range decRange = decorations[attribKey.Key];
+                string tag = await model.GetValueInRange(decRange, EndOfLinePreference.CRLF);
+                bool closedTag = Helpers.IsClosedTag(tag);
+
+                XmlDocument node = new XmlDocument();
+                if (closedTag) node.LoadXml(tag);
+                else node.LoadXml($"{tag}</{AppState.tagName}>");
+                foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                 {
-                    TextModel model = await _editorSource.GetModel();
+                    if (attrb.Name == AppState.newAttribName) doAdd = false; //attrib exists and will not be changed
+                }
 
-                    BlazorMonaco.Range decRange = sourceDecorations[attribKey.Key];
-                    string tag = await model.GetValueInRange(decRange, EndOfLinePreference.CRLF);
-                    bool closedTag = Helpers.IsClosedTag(tag);
-
-                    XmlDocument node = new XmlDocument();
-                    if (closedTag) node.LoadXml(tag);
-                    else node.LoadXml($"{tag}</{AppState.tagName}>");
-
+                if (doAdd)
+                {
                     string sNewAttrib = $" {AppState.newAttribName}=\"noCorresp\"";
                     if (closedTag) tag = tag.Replace("/>", $"{sNewAttrib}/>");
                     else tag = tag.Replace(">", $"{sNewAttrib}>");
-                    //await Helpers.ColorRange(_editorSource, decRange, attribKey.Key);
 
                     List<Selection> lSelections = new List<Selection>()
-                {
+                        {
                            new Selection()
                            {
                            StartLineNumber=decRange.EndLineNumber,
@@ -320,17 +340,17 @@
                            }
                         };
                     List<IdentifiedSingleEditOperation> lOpEd = new List<IdentifiedSingleEditOperation>()
-                {
+                        {
                             new IdentifiedSingleEditOperation()
                             {
                                 Range = decRange,
                                 Text = tag
                             }
                         };
-                    await _editorSource.ExecuteEdits("source", lOpEd, lSelections);
+                    await editor.ExecuteEdits("source", lOpEd, lSelections);
 
                     //may need to move following tags if on the last line of current tag
-                    var tagsOnLine = from d in sourceDecorations where d.Value.StartLineNumber == decRange.EndLineNumber select d;
+                    var tagsOnLine = from d in decorations where d.Value.StartLineNumber == decRange.EndLineNumber select d;
                     foreach (KeyValuePair<string, BlazorMonaco.Range> d in tagsOnLine)
                     {
                         d.Value.StartColumn = d.Value.StartColumn + sNewAttrib.Length;
@@ -338,26 +358,23 @@
                     }
 
                     if (decRange.StartLineNumber == decRange.EndLineNumber)
-                    {//tag on one line 
-                        sourceDecorations[attribKey.Key].StartColumn = sourceDecorations[attribKey.Key].StartColumn - sNewAttrib.Length;
+                    {//tag on one line
+                        decorations[attribKey.Key].StartColumn = decorations[attribKey.Key].StartColumn - sNewAttrib.Length;
                     }
                     else
-                    {//tag on more then one line 
-                        sourceDecorations[attribKey.Key].EndColumn = sourceDecorations[attribKey.Key].EndColumn + sNewAttrib.Length;
+                    {//tag on more then one line
+                        decorations[attribKey.Key].EndColumn = decorations[attribKey.Key].EndColumn + sNewAttrib.Length;
                     }
+                }
 
-
-                    await Helpers.ColorRange(_editorSource, sourceDecorations[attribKey.Key], attribKey.Key, enmStatusColor.Warning);
-                    if (!alreadyRevealed)
-                    {
-                        await _editorSource.RevealRangeInCenter(sourceDecorations[attribKey.Key]);
-                        alreadyRevealed = true;
-                    }
+                await Helpers.ColorRange(editor, decorations[attribKey.Key], attribKey.Key, enmStatusColor.Warning);
+                if (!alreadyRevealed)
+                {
+                    await editor.RevealRangeInCenter(decorations[attribKey.Key]);
+                    alreadyRevealed = true;
                 }
             }
         }
-
-        AppState.notWorking();
     }
 
     private async Task CopyTag(bool newTagVal = false, bool moveToNext = false)
