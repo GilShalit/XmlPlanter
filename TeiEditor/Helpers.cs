@@ -247,8 +247,8 @@ namespace TeiEditor
                     MiniMapColor = "#bbfaf9";
                     break;
                 case enmStatusColor.Warning:
-                    contentClass = ".decorationContentWarning";
-                    GlyphMarginClass = ".decorationContentWarning";
+                    contentClass = "decorationContentWarning";
+                    GlyphMarginClass = "decorationGlyphMarginWarning";
                     MiniMapColor = "#fabbde";
                     break;
             }

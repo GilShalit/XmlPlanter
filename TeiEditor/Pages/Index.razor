@@ -288,12 +288,71 @@
 
         if (AppState.OpMode == enmOpMode.FindNoCorresponding)
         {
+            bool alreadyRevealed = false;
             foreach (KeyValuePair<string, string> attribKey in sourceLookup)
             {
                 string otherAttrib = targetLookup.Where(k => k.Value == attribKey.Value).Select(k => k.Value).FirstOrDefault();
                 if (string.IsNullOrEmpty(otherAttrib))
                 {
-                    await  Helpers.ColorRange(_editorSource, sourceDecorations[attribKey.Key], attribKey.Key, enmStatusColor.Warning);
+                    TextModel model = await _editorSource.GetModel();
+
+                    BlazorMonaco.Range decRange = sourceDecorations[attribKey.Key];
+                    string tag = await model.GetValueInRange(decRange, EndOfLinePreference.CRLF);
+                    bool closedTag = Helpers.IsClosedTag(tag);
+
+                    XmlDocument node = new XmlDocument();
+                    if (closedTag) node.LoadXml(tag);
+                    else node.LoadXml($"{tag}</{AppState.tagName}>");
+
+                    string sNewAttrib = $" {AppState.newAttribName}=\"noCorresp\"";
+                    if (closedTag) tag = tag.Replace("/>", $"{sNewAttrib}/>");
+                    else tag = tag.Replace(">", $"{sNewAttrib}>");
+                    //await Helpers.ColorRange(_editorSource, decRange, attribKey.Key);
+
+                    List<Selection> lSelections = new List<Selection>()
+                {
+                           new Selection()
+                           {
+                           StartLineNumber=decRange.EndLineNumber,
+                           EndLineNumber=decRange.EndLineNumber,
+                           StartColumn=decRange.EndColumn,
+                           EndColumn=decRange.EndColumn
+                           }
+                        };
+                    List<IdentifiedSingleEditOperation> lOpEd = new List<IdentifiedSingleEditOperation>()
+                {
+                            new IdentifiedSingleEditOperation()
+                            {
+                                Range = decRange,
+                                Text = tag
+                            }
+                        };
+                    await _editorSource.ExecuteEdits("source", lOpEd, lSelections);
+
+                    //may need to move following tags if on the last line of current tag
+                    var tagsOnLine = from d in sourceDecorations where d.Value.StartLineNumber == decRange.EndLineNumber select d;
+                    foreach (KeyValuePair<string, BlazorMonaco.Range> d in tagsOnLine)
+                    {
+                        d.Value.StartColumn = d.Value.StartColumn + sNewAttrib.Length;
+                        if (d.Value.EndLineNumber == decRange.EndLineNumber) d.Value.EndColumn = d.Value.EndColumn + sNewAttrib.Length;
+                    }
+
+                    if (decRange.StartLineNumber == decRange.EndLineNumber)
+                    {//tag on one line 
+                        sourceDecorations[attribKey.Key].StartColumn = sourceDecorations[attribKey.Key].StartColumn - sNewAttrib.Length;
+                    }
+                    else
+                    {//tag on more then one line 
+                        sourceDecorations[attribKey.Key].EndColumn = sourceDecorations[attribKey.Key].EndColumn + sNewAttrib.Length;
+                    }
+
+
+                    await Helpers.ColorRange(_editorSource, sourceDecorations[attribKey.Key], attribKey.Key, enmStatusColor.Warning);
+                    if (!alreadyRevealed)
+                    {
+                        await _editorSource.RevealRangeInCenter(sourceDecorations[attribKey.Key]);
+                        alreadyRevealed = true;
+                    }
                 }
             }
         }
@@ -306,6 +365,8 @@
         string msg = "";
         switch (AppState.OpMode)
         {
+            case enmOpMode.AlignSelectedTag:
+            case enmOpMode.FindNoCorresponding:
             case enmOpMode.None:
                 msg = "Please select mode in configuration";
                 break;
@@ -322,10 +383,12 @@
             return;
         }
 
-        KeyValuePair<string, BlazorMonaco.Range> dec = Helpers.currentDec;
+        KeyValuePair<string, BlazorMonaco.Range>
+    dec = Helpers.currentDec;
         if (!string.IsNullOrEmpty(dec.Key))
         {
-            List<IdentifiedSingleEditOperation> lOpEd;
+            List<IdentifiedSingleEditOperation>
+                lOpEd;
             BlazorMonaco.Range decRange = dec.Value;
             TextModel sourceModel = await _editorSource.GetModel();
             string tag = await sourceModel.GetValueInRange(decRange, EndOfLinePreference.CRLF);
@@ -348,21 +411,24 @@
             Selection targetSel = await _editorTarget.GetSelection();
             BlazorMonaco.Range targetStartRange = new BlazorMonaco.Range(targetSel.StartLineNumber, targetSel.StartColumn, targetSel.StartLineNumber, targetSel.StartColumn);
             BlazorMonaco.Range targetEndRange = new BlazorMonaco.Range(targetSel.EndLineNumber, targetSel.EndColumn, targetSel.EndLineNumber, targetSel.EndColumn);
-            List<Selection> lSelections = new List<Selection>() { targetSel };
+            List<Selection>
+                lSelections = new List<Selection>
+                    () { targetSel };
 
 
             ///insert tag on target
             if (targetSel.StartLineNumber != targetSel.EndLineNumber || targetSel.StartColumn != targetSel.EndColumn)
             {//a range is selected
                 string endTag = $"</{AppState.tagName}>";
-                lOpEd = new List<IdentifiedSingleEditOperation>() {
+                lOpEd = new List<IdentifiedSingleEditOperation>
+                    () {
                     new IdentifiedSingleEditOperation() {
-                        Range = targetStartRange,
-                        Text = tag},
+                    Range = targetStartRange,
+                    Text = tag},
                     new IdentifiedSingleEditOperation() {
-                        Range = targetEndRange,
-                        Text = endTag }
-                };
+                    Range = targetEndRange,
+                    Text = endTag }
+                    };
                 await _editorTarget.ExecuteEdits("source", lOpEd, lSelections);
 
                 if (targetSel.StartLineNumber == targetSel.EndLineNumber)
@@ -374,11 +440,12 @@
             }
             else
             {//insert at cursor
-                lOpEd = new List<IdentifiedSingleEditOperation>() {
-                    new IdentifiedSingleEditOperation() {
+                lOpEd = new List<IdentifiedSingleEditOperation>
+                    () {
+                        new IdentifiedSingleEditOperation() {
                         Range = targetStartRange,
                         Text = Helpers.CloseTag(tag)}
-                };
+                        };
                 await _editorTarget.ExecuteEdits("source", lOpEd, lSelections);
                 if (tag.IndexOf("/>") != -1) targetSel.EndColumn += tag.Length;//for painting target
                 else targetSel.EndColumn += tag.Length + 1;//closing tag adds '/'
@@ -393,7 +460,8 @@
             if (moveToNext)
             {
                 //select next marked tag
-                KeyValuePair<string, BlazorMonaco.Range> nextDec = getNextDec(dec);
+                KeyValuePair<string, BlazorMonaco.Range>
+                    nextDec = getNextDec(dec);
                 if (!string.IsNullOrEmpty(nextDec.Key))
                 {
                     Position nextPos = new Position() { LineNumber = nextDec.Value.StartLineNumber, Column = nextDec.Value.StartColumn };
@@ -404,9 +472,13 @@
         }
     }
 
-    private KeyValuePair<string, BlazorMonaco.Range> getNextDec(KeyValuePair<string, BlazorMonaco.Range> currentDec)
+    private KeyValuePair<string, BlazorMonaco.Range>
+        getNextDec(KeyValuePair<string, BlazorMonaco.Range>
+            currentDec)
     {
-        KeyValuePair<string, BlazorMonaco.Range> nextDec = new KeyValuePair<string, BlazorMonaco.Range>();
+        KeyValuePair<string, BlazorMonaco.Range>
+            nextDec = new KeyValuePair<string, BlazorMonaco.Range>
+                ();
         int nextI = 0;
 
         for (int i = 0; i < sourceDecorations.Keys.Count; i++)
