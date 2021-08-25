@@ -84,11 +84,13 @@ namespace TeiEditor
                 else
                 {
                     TextModel sourceModel = await editor.GetModel();
+                    List<string> modelLines = await sourceModel.GetLinesContent();
+
                     string tag = await sourceModel.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
 
                     Position pEnd;
                     if (IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
-                    else pEnd = await getEndOfTag(tagName, dec.Value, sourceModel);
+                    else pEnd =  getEndOfTag(tagName, dec.Value, modelLines);
 
                     BlazorMonaco.Range range = new BlazorMonaco.Range()
                     {
@@ -143,16 +145,15 @@ namespace TeiEditor
             await js.InvokeVoidAsync("BlazorDownloadFile", result.Data?.ToString() ?? string.Empty, "text/xml", file);
         }
 
-        public static async Task<Position> getEndOfTag(string tagName, BlazorMonaco.Range tagRange, TextModel model)
+        public static Position getEndOfTag(string tagName, BlazorMonaco.Range tagRange, List<string> modelLines)
         {
             string endTag = $"</{tagName}>";
             int l = tagRange.EndLineNumber;
-            List<string> lines = await model.GetLinesContent();
             int endTagCol = -1;
-            while (l < lines.Count)
+            while (l < modelLines.Count)
             {//problem if previous tag closes on the same line before the start of current tag
-                if (l == tagRange.EndLineNumber) endTagCol = lines[l - 1].IndexOf(endTag, tagRange.EndColumn - 1);//searching on first line
-                else endTagCol = lines[l - 1].IndexOf(endTag);
+                if (l == tagRange.EndLineNumber) endTagCol = modelLines[l - 1].IndexOf(endTag, tagRange.EndColumn - 1);//searching on first line
+                else endTagCol = modelLines[l - 1].IndexOf(endTag);
 
                 if (endTagCol > -1) break;
                 l++;
