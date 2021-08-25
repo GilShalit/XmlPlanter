@@ -368,9 +368,9 @@ namespace TeiEditor
             else ShowModal("XML is Valid", Modal);
         }
 
-        public static void ShowModal(string msg, IModalService Modal, bool isLongMessage=false)
+        public static void ShowModal(string msg, IModalService Modal)
         {
-            ModalOptions options = new ModalOptions() { HideCloseButton = !isLongMessage, ContentScrollable = isLongMessage};
+            ModalOptions options = new ModalOptions() { HideCloseButton = true};
             Modal.Show<Confirm>(msg, options);
         }
 

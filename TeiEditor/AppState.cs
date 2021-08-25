@@ -44,11 +44,12 @@ namespace TeiEditor
     {
         X2X = 0,
         X2T2X = 1,
-        XmlId=2
+        XmlId = 2
     }
 
     public class AppState
     {
+        public List<string> Alerts { get; set; }
         public string hiddenClass { get; private set; }
         public string tagName { get; set; }
         public string attribName { get; set; }
@@ -71,6 +72,8 @@ namespace TeiEditor
             attribName = "xml:id";
             newAttribName = "ref";
             attribStartVal = 1;
+            
+            Alerts = new List<string>();
         }
 
         public void isWorking()

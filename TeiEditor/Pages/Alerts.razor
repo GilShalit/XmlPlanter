@@ -1,0 +1,35 @@
+﻿@inject AppState AppState
+
+<div>
+    @if (AppState.Alerts.Count == 1)
+    {
+        @AppState.Alerts[0];
+    }
+    else
+    {
+        <ul>
+            @foreach (string s in AppState.Alerts)
+            {
+                <li>@s</li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+    }
+
+    async Task SubmitForm()
+    {
+
+    }
+
+    async Task Cancel() => await BlazoredModal.CancelAsync();
+
+    }
+

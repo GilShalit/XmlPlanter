@@ -105,13 +105,13 @@
 
     private async Task Lookup()
     {
-        string msg = "";
         AppState.isWorking();
         await Task.Delay(5);
         Stopwatch sw = new Stopwatch();
         sw.Start();
         TextModel model = await _editorSource.GetModel();
         List<string> modelLines = await model.GetLinesContent();
+        int linesCount;
         await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
         bool doReplace, isAmbiguous;
         int numAmbiguous = 0;
@@ -194,9 +194,7 @@
                             catch (Exception)
                             {
                                 doReplace = false;
-                                msg = Add2Msg(msg, $"Nested tag: {fullTag}");
-                                Console.WriteLine(msg);
-                                //throw;
+                                AppState.Alerts.Add( $"Nested tag: {fullTag}");
                             }
 
                             if (dicLookup.ContainsKey(node.InnerText))
@@ -223,7 +221,7 @@
                     else await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
 
                     List<Selection> lSelections = new List<Selection>()
-        {
+{
                         new Selection()
                         {
                             StartLineNumber=dec.Value.EndLineNumber,
@@ -238,7 +236,7 @@
                         Text = tag}
                 };
                     await _editorSource.ExecuteEdits("source", lOpEd, lSelections);
-                    modelLines = await model.GetLinesContent();
+                                            modelLines = await model.GetLinesContent();
 
                     if (lastLineChange != 0)
                     {//may need to move following tags if on the last line of current tag
@@ -259,15 +257,22 @@
             catch (Exception)
             {
 
-                msg = Add2Msg(msg, $"Problam in tag: {tag}");
+                AppState.Alerts.Add($"Problam in tag: {tag}");
             }
         }
         sw.Stop();
         Console.WriteLine(sw.Elapsed);
         if (topLineNotFound != -1) await _editorSource.RevealLineInCenter(topLineNotFound);
         AppState.notWorking();
-        if (numAmbiguous > 0) msg = Add2Msg(msg, $"There is\\are {numAmbiguous} ambiguous case(s)! To find them search for ||.");
-        if (msg != "") Helpers.ShowModal(msg, Modal, isLongMessage: true);
+        if (numAmbiguous == 1) AppState.Alerts.Add($"There is {numAmbiguous} ambiguous case! To find it search for ||.");
+        if (numAmbiguous > 1) AppState.Alerts.Add($"There are {numAmbiguous} ambiguous cases! To find them search for ||.");
+        if (AppState.Alerts.Count > 0)
+        {//move to helpers
+            ModalOptions options = new ModalOptions() { HideCloseButton = false,ContentScrollable=true, Animation = ModalAnimation.FadeInOut(0.5) };
+            var alertsForm = Modal.Show<Alerts>(title: "Alerts", options: options);
+            var result = await alertsForm.Result;
+        }
+
     }
 
     private string newAmbigAttrib(string attribName, string attribValue, ref bool isAmbiguous)
@@ -289,7 +294,7 @@
     private string Add2Msg(string message, string newMsg)
     {
         if (string.IsNullOrEmpty(message)) return newMsg;
-        return $"{message}\r\n{newMsg}";
+        return message + "<br />" + newMsg;
     }
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
