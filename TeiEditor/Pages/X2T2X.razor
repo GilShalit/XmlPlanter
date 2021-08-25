@@ -194,7 +194,7 @@
                             catch (Exception)
                             {
                                 doReplace = false;
-                                AppState.Alerts.Add( $"Nested tag: {fullTag}");
+                                AppState.Alerts.Add($"Nested tag: {fullTag}");
                             }
 
                             if (dicLookup.ContainsKey(node.InnerText))
@@ -236,7 +236,12 @@
                         Text = tag}
                 };
                     await _editorSource.ExecuteEdits("source", lOpEd, lSelections);
-                                            modelLines = await model.GetLinesContent();
+                    //modelLines = await model.GetLinesContent();
+                    for (int i = dec.Value.StartLineNumber; i <= dec.Value.EndLineNumber; i++)
+                    {
+                        string s = await model.GetLineContent(i);
+                        modelLines[i - 1] = s;  //GetLineContent is 1-based
+                    }
 
                     if (lastLineChange != 0)
                     {//may need to move following tags if on the last line of current tag
@@ -268,7 +273,7 @@
         if (numAmbiguous > 1) AppState.Alerts.Add($"There are {numAmbiguous} ambiguous cases! To find them search for ||.");
         if (AppState.Alerts.Count > 0)
         {//move to helpers
-            ModalOptions options = new ModalOptions() { HideCloseButton = false,ContentScrollable=true, Animation = ModalAnimation.FadeInOut(0.5) };
+            ModalOptions options = new ModalOptions() { HideCloseButton = false, ContentScrollable = true, Animation = ModalAnimation.FadeInOut(0.5) };
             var alertsForm = Modal.Show<Alerts>(title: "Alerts", options: options);
             var result = await alertsForm.Result;
         }
