@@ -60,7 +60,7 @@ namespace TeiEditor
             string tagName,
             Position pClick, bool isLeftButton, MonacoEditor editor,
             Dictionary<string, BlazorMonaco.Range> sourceDecorations,Boolean isFromTarget=false)
-        {
+        {//!!!! if this is run in a loop make a change so GetLinesContent is run outside the loop!!!
             if (isLeftButton)
             {
                 KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
@@ -368,9 +368,9 @@ namespace TeiEditor
             else ShowModal("XML is Valid", Modal);
         }
 
-        public static void ShowModal(string msg, IModalService Modal)
+        public static void ShowModal(string msg, IModalService Modal, bool isLongMessage=false)
         {
-            ModalOptions options = new ModalOptions() { HideCloseButton = true };
+            ModalOptions options = new ModalOptions() { HideCloseButton = !isLongMessage, ContentScrollable = isLongMessage};
             Modal.Show<Confirm>(msg, options);
         }
 

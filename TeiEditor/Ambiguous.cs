@@ -8,6 +8,7 @@ namespace TeiEditor
     public class Ambiguous
     {
         private List<KeyValuePair<string, string>> dictionary;
+        
         public Ambiguous()
         {
             dictionary = new List<KeyValuePair<string, string>>();

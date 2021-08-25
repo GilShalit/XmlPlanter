@@ -113,11 +113,12 @@
         TextModel model = await _editorSource.GetModel();
         List<string> modelLines = await model.GetLinesContent();
         await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
-        bool doReplace;
+        bool doReplace, isAmbiguous;
+        int numAmbiguous = 0;
         int topLineNotFound = -1;
         string sNewAttrib = ""; string sOldAttrib = "";
         int lastLineChange;
-        string tag="", fullTag;
+        string tag = "", fullTag;
         Position pEnd; BlazorMonaco.Range range;
 
         foreach (KeyValuePair<string, BlazorMonaco.Range> dec in sourceDecorations)
@@ -125,6 +126,7 @@
             try
             {
                 doReplace = false;
+                isAmbiguous = false;
                 lastLineChange = 0;
                 tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
                 if (tag.Contains("temp0757"))
@@ -149,7 +151,7 @@
                             if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has attrib value as key
                             {
                                 doReplace = true;
-                                sNewAttrib = $" {AppState.newAttribName}=\"{dicLookup.Value(attrb.Value)}\"";
+                                sNewAttrib = newAmbigAttrib(AppState.newAttribName, attrb.Value, ref isAmbiguous);
                                 lastLineChange = sNewAttrib.Length; //change in tag length that may affect next tag if on the same line
                                 if (closedTag) tag = tag.Replace("/>", $"{sNewAttrib}/>");
                                 else tag = tag.Replace(">", $"{sNewAttrib}>");
@@ -162,7 +164,8 @@
                             if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has old attrib value as key
                             {
                                 doReplace = true;
-                                sNewAttrib = $" {attrb.Name}=\"{dicLookup.Value(attrb.Value)}\"";
+                                //sNewAttrib = $" {attrb.Name}=\"{dicLookup.Value(attrb.Value)}\"";
+                                sNewAttrib = newAmbigAttrib(attrb.Name, attrb.Value, ref isAmbiguous);
                                 sOldAttrib = $" {attrb.Name}=\"{attrb.Value}\"";
                                 if (tag.IndexOf("\r\n", tag.IndexOf(sOldAttrib)) == -1)
                                 {//there is no line-break after the attribute so a change in length will affet the following tag if on the same line
@@ -199,7 +202,9 @@
                             if (dicLookup.ContainsKey(node.InnerText))
                             {
                                 doReplace = true;
-                                sNewAttrib = $" {AppState.newAttribName}=\"{dicLookup.Value(node.InnerText)}\"";
+                                //sNewAttrib = $" {AppState.newAttribName}=\"{dicLookup.Value(node.InnerText)}\"";
+                                sNewAttrib = newAmbigAttrib(AppState.newAttribName, node.InnerText, ref isAmbiguous);
+
                                 lastLineChange = sNewAttrib.Length; //change in tag length that may affect next tag if on the same line
                                 tag = tag.Replace(">", $"{sNewAttrib}>");
                             }
@@ -210,21 +215,30 @@
 
                 if (doReplace)
                 {
-                    await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
+                    if (isAmbiguous)
+                    {
+                        numAmbiguous++;
+                        await Helpers.ColorRange(_editorSource, dec.Value, dec.Key, enmStatusColor.Warning);
+                    }
+                    else await Helpers.ColorRange(_editorSource, dec.Value, dec.Key);
 
-                    List<Selection> lSelections = new List<Selection>() {
-                   new Selection(){
-                   StartLineNumber=dec.Value.EndLineNumber,
-                   EndLineNumber=dec.Value.EndLineNumber,
-                   StartColumn=dec.Value.EndColumn,
-                   EndColumn=dec.Value.EndColumn
-                   }};
+                    List<Selection> lSelections = new List<Selection>()
+        {
+                        new Selection()
+                        {
+                            StartLineNumber=dec.Value.EndLineNumber,
+                            EndLineNumber=dec.Value.EndLineNumber,
+                            StartColumn=dec.Value.EndColumn,
+                            EndColumn=dec.Value.EndColumn
+                        }
+                    };
                     List<IdentifiedSingleEditOperation> lOpEd = new List<IdentifiedSingleEditOperation>() {
                     new IdentifiedSingleEditOperation() {
                         Range = dec.Value,
                         Text = tag}
                 };
                     await _editorSource.ExecuteEdits("source", lOpEd, lSelections);
+                    modelLines = await model.GetLinesContent();
 
                     if (lastLineChange != 0)
                     {//may need to move following tags if on the last line of current tag
@@ -252,13 +266,30 @@
         Console.WriteLine(sw.Elapsed);
         if (topLineNotFound != -1) await _editorSource.RevealLineInCenter(topLineNotFound);
         AppState.notWorking();
-        if (msg != "") Helpers.ShowModal(msg, Modal);
+        if (numAmbiguous > 0) msg = Add2Msg(msg, $"There is\\are {numAmbiguous} ambiguous case(s)! To find them search for ||.");
+        if (msg != "") Helpers.ShowModal(msg, Modal, isLongMessage: true);
+    }
+
+    private string newAmbigAttrib(string attribName, string attribValue, ref bool isAmbiguous)
+    {
+        string sNewAttrib = "";
+        List<string> values = dicLookup.Values(attribValue);
+        foreach (string val in values)
+        {
+            if (sNewAttrib == "") sNewAttrib = $" {AppState.newAttribName}=\"{val}\"";
+            else
+            {
+                sNewAttrib = $"{sNewAttrib} || {AppState.newAttribName}=\"{val}\"";
+                isAmbiguous = true;
+            }
+        }
+        return sNewAttrib;
     }
 
     private string Add2Msg(string message, string newMsg)
     {
         if (string.IsNullOrEmpty(message)) return newMsg;
-        return $"{message}\n{newMsg}";
+        return $"{message}\r\n{newMsg}";
     }
     private async void onMouseDownSource(EditorMouseEvent eventArg)
     {
