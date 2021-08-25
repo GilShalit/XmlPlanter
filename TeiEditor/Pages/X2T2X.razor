@@ -121,6 +121,8 @@
         string tag = "", fullTag;
         Position pEnd; BlazorMonaco.Range range;
 
+        AppState.Alerts.Clear();
+
         foreach (KeyValuePair<string, BlazorMonaco.Range> dec in sourceDecorations)
         {
             try
