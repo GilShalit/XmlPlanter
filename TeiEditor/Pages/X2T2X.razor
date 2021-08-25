@@ -148,7 +148,9 @@
                     case enmOpMode.NewAttribLookup:
                         foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                         {
-                            if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value))//has attrib value as key
+                            if (attrb.Name == AppState.attribName && dicLookup.ContainsKey(attrb.Value) //has attrib value as key
+                                && !tag.Contains(AppState.newAttribName) //newAttrib does not exist
+                                )
                             {
                                 doReplace = true;
                                 sNewAttrib = newAmbigAttrib(AppState.newAttribName, attrb.Value, ref isAmbiguous);
@@ -176,7 +178,7 @@
                         }
                         break;
                     case enmOpMode.AttribLookupContents:
-                        if (!closedTag)//only if tag has content
+                        if (!closedTag && !tag.Contains(AppState.newAttribName))//only if tag has content and newAttrib not there yet
                         {
                             pEnd = Helpers.getEndOfTag(AppState.tagName, dec.Value, modelLines);
                             range = new BlazorMonaco.Range()
