@@ -331,7 +331,7 @@
         lblSource = e.File.Name;
         lblChooseSource = "Source: ";
 
-        if (e.File.Size > 512000) lblSource = $"{lblSource} is larger the 500kb!";
+        if (e.File.Size > 512000) lblSource = $"{lblSource} is larger than 500kb!";
         else await Helpers.LoadXMLfromFile(_editorSource, e.File);
     }
 
@@ -344,7 +344,7 @@
 
         if (e.File.Size > 512000)
         {
-            lblLookup = $"{lblLookup} is larger the 500kb!";
+            lblLookup = $"{lblLookup} is larger than 500kb!";
             return;
         }
 
