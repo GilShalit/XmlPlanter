@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
   </PropertyGroup>
   
@@ -10,7 +10,7 @@
         <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
     <InvariantGlobalization>true</InvariantGlobalization> If the app doesn't require localization, you may configure the app to support the invariant culture -->
     <UseSystemResourceKeys>false</UseSystemResourceKeys>
-    <AssemblyVersion>1.0.0.1</AssemblyVersion>
+    <AssemblyVersion>0.9.6.1</AssemblyVersion>
 
   </PropertyGroup>
   
@@ -19,11 +19,11 @@
   </ItemGroup>
   
   <ItemGroup>
-	  <PackageReference Include="Blazored.Modal" Version="6.0.1" />
-	  <PackageReference Include="BlazorMonaco" Version="2.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.9" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.9" />
-    <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
+    <PackageReference Include="Blazored.Modal" Version="6.0.1" />
+    <PackageReference Include="BlazorMonaco" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.9" />
+    <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
