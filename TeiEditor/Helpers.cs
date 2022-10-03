@@ -193,13 +193,21 @@ namespace TeiEditor
             TextModel sourceModel = await editor.GetModel();
             await editor.ResetDeltaDecorations();
             List<FindMatch> sourceMatches;
+            List<FindMatch> openSourceMatches;
 
-            sourceMatches = await sourceModel.FindMatches($"<{tag}", false, false, false, null, true, 10000);
+            //v0.9.6.1: two searches are required to separate between open and closed tags.
+            //Used to have one search for $"<{tag}" but then a search for <sp found also <speaker
+            sourceMatches = await sourceModel.FindMatches($"<{tag}>", false, false, false, null, true, 10000);
+            openSourceMatches = await sourceModel.FindMatches($"<{tag} ", false, false, false, null, true, 10000);
+            if (openSourceMatches.Count() > 0) foreach (FindMatch m in openSourceMatches)
+                { m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel); }//change range to hold complete tag
+            sourceMatches.AddRange(openSourceMatches);
+            sourceMatches=sourceMatches.OrderBy(m=>m.Range.StartLineNumber).ToList();
+
             if (sourceMatches.Count > 0)
             {
                 foreach (FindMatch m in sourceMatches)
                 {
-                    m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel);//change range to hold complete tag
                     lstDecorations.Add(new ModelDeltaDecoration
                     {
                         Range = m.Range,
