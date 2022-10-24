@@ -16,6 +16,9 @@
             <option value=@Extensions.GetEnumDisplayName(enmOpMode.FindNoCorresponding)>
                 @Extensions.GetDescription(enmOpMode.FindNoCorresponding)
             </option>
+            <option value=@Extensions.GetEnumDisplayName(enmOpMode.CopyAttribute)>
+                @Extensions.GetDescription(enmOpMode.CopyAttribute)
+            </option>
         </select>
         <select @bind="OpMode" class="@X2T2XHidden">
             <option value=@Extensions.GetEnumDisplayName(enmOpMode.NewAttribLookup)>
@@ -119,6 +122,15 @@
                     NewAttributeHidden = "";
                     newAttribute = "ana";
                     attribStartHidden = hidden;
+                    break;
+                case "CopyAttribute":
+                    //AppState.OpMode = enmOpMode.CopyAttribute;
+                    TagHidden = "";
+                    AttributeHidden = "";
+                    NewAttributeHidden = hidden;
+                    attribStartHidden = hidden;
+                    Tag = "sp";
+                    Attribute = "xml:id";
                     break;
 
                 case "NewAttribLookup":

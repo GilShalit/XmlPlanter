@@ -279,7 +279,7 @@
 
         await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
 
-        if (AppState.OpMode == enmOpMode.AlignSelectedTag || AppState.OpMode == enmOpMode.FindNoCorresponding)
+        if (AppState.OpMode == enmOpMode.AlignSelectedTag || AppState.OpMode == enmOpMode.FindNoCorresponding || AppState.OpMode == enmOpMode.CopyAttribute)
         {
             await Helpers.markTags(_editorTarget, AppState.tagName, targetDecorations);
             sourceLookup = await Helpers.GetDecorationTagAttribs(AppState.tagName, AppState.attribName, _editorSource, sourceDecorations);
