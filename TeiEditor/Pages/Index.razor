@@ -81,7 +81,6 @@
     [CascadingParameter] public IModalService Modal { get; set; }
     string[] actionList = new string[3] { "mark", "validate", "save" };
 
-
     private async void OnTargetCommandSelected(string action)
     {
         switch (action)
@@ -127,6 +126,8 @@
         await Helpers.ensureLoadedSchemas(_client);
 
         AppState.notWorking();
+        await Helpers.LoadXM2Debug(_editorSource, "files/Dybbuk125withXMLID.xml", _client);
+        await Helpers.LoadXM2Debug(_editorTarget, "files/DIBBUK303.xml", _client);
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)

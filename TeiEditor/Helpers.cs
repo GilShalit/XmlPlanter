@@ -347,7 +347,13 @@ namespace TeiEditor
             }
         }
 
-
+        public static async Task LoadXM2Debug(MonacoEditor editor, string path, HttpClient _client)
+        {
+            byte[] bytesOfXML = await _client.GetByteArrayAsync(path);
+            string stringOfXML = Encoding.UTF8.GetString(bytesOfXML);
+            TextModel model = await MonacoEditorBase.CreateModel(stringOfXML, "xml");
+            await editor.SetModel(model);
+        }
         public static async Task LoadXMLfromFile(MonacoEditor editor, IBrowserFile file)
         {
             byte[] bytesOfXML = new byte[file.Size];
