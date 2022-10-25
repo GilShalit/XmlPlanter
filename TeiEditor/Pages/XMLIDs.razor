@@ -69,11 +69,11 @@
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
     {
         return new StandaloneEditorConstructionOptions
-        {
-            GlyphMargin = true,
-            AutomaticLayout = true,
-            WordWrap = "on"
-        };
+            {
+                GlyphMargin = true,
+                AutomaticLayout = true,
+                WordWrap = "on"
+            };
     }
 
     private async void OnCommandSelected(string action)
@@ -119,9 +119,7 @@
             tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
             bool closedTag = Helpers.IsClosedTag(tag);
 
-            XmlDocument node = new XmlDocument();
-            if (closedTag) node.LoadXml(tag);
-            else node.LoadXml($"{tag}</{AppState.tagName}>");
+            XmlDocument node = Helpers.getTagXMLNode(tag, AppState.tagName, closedTag);
 
             switch (AppState.OpMode)
             {

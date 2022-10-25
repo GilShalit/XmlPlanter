@@ -332,9 +332,7 @@
                 string tag = await model.GetValueInRange(decRange, EndOfLinePreference.CRLF);
                 bool closedTag = Helpers.IsClosedTag(tag);
 
-                XmlDocument node = new XmlDocument();
-                if (closedTag) node.LoadXml(tag);
-                else node.LoadXml($"{tag}</{AppState.tagName}>");
+                XmlDocument node =  Helpers.getTagXMLNode(tag, AppState.tagName, closedTag);
                 foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                 {
                     if (attrb.Name == AppState.newAttribName) doAdd = false; //attrib exists and will not be changed
@@ -453,10 +451,8 @@
             tag = tag.Replace("\t", "").Replace("\r", "").Replace("\n", "");
             if (newTagVal)
             {
-                XmlDocument node = new XmlDocument();
                 bool emptyTag = Helpers.IsClosedTag(tag);
-                if (emptyTag) node.LoadXml(tag);
-                else node.LoadXml($"{tag}</{AppState.tagName}>");
+                XmlDocument node = Helpers.getTagXMLNode(tag, AppState.tagName, emptyTag);
                 foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                 {
                     if (attrb.Name == AppState.attribName) attrb.Value = (AppState.attribStartVal++).ToString();
@@ -565,20 +561,15 @@
         {
             List<IdentifiedSingleEditOperation> lOpEd;
             TextModel sourceModel = await _editorSource.GetModel();
-         
+
             //find source attribute value
-            BlazorMonaco.Range decRange = sourceDec.Value;
-            string tag = await sourceModel.GetValueInRange(decRange, EndOfLinePreference.CRLF);
-            tag = tag.Replace("\t", "").Replace("\r", "").Replace("\n", "");
-            XmlDocument node = new XmlDocument();
-            bool emptyTag = Helpers.IsClosedTag(tag);
-            if (emptyTag) node.LoadXml(tag);
-            else node.LoadXml($"{tag}</{AppState.tagName}>");
+            XmlDocument node = await Helpers.getTagXMLNode(sourceDec.Value, sourceModel, AppState.tagName, true);
             foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
             {
                 if (attrb.Name == AppState.attribName) attribVal = attrb.Value;
             }
 
+            //decRange = targetDec.Value;
         }
     }
 
