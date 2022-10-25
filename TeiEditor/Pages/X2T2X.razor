@@ -229,9 +229,11 @@
                         }
                     };
                     List<IdentifiedSingleEditOperation> lOpEd = new List<IdentifiedSingleEditOperation>() {
-                    new IdentifiedSingleEditOperation() {
+                    new IdentifiedSingleEditOperation() 
+                    {
                         Range = dec.Value,
-                        Text = tag}
+                        Text = tag
+                    }
                 };
                     await _editorSource.ExecuteEdits("source", lOpEd, lSelections);
                     //modelLines = await model.GetLinesContent();

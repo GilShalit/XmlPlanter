@@ -39,8 +39,8 @@ namespace TeiEditor
         static public XmlSchemaSet schemaSet = new XmlSchemaSet();
         static public string currentRangeId;
         static public string otherRangeId;
-        static public KeyValuePair<string, BlazorMonaco.Range> currentDec;
-        static public KeyValuePair<string, BlazorMonaco.Range> otherDec;
+        static public KeyValuePair<string, BlazorMonaco.Range> currentDec { get; set; }
+        static public KeyValuePair<string, BlazorMonaco.Range> otherDec { get; set; }
 
         public static bool IsPosInRange(Position position, BlazorMonaco.Range range)
         {
