@@ -557,9 +557,8 @@
         }
 
         string attribVal = "";
-        KeyValuePair<string, BlazorMonaco.Range> targetDec = Helpers.otherDec;
         KeyValuePair<string, BlazorMonaco.Range> sourceDec = Helpers.currentDec;
-        if(sourceDec.Key==null || targetDec.Key==null)
+        if(sourceDec.Key==null)// || targetDec.Key==null)
         {
             msg = $"Click an <{AppState.tagName}> node on both files!";
             Helpers.ShowModal(msg, Modal);
@@ -579,16 +578,24 @@
 
             //adding or updating attribute on target
             TextModel targetModel = await _editorTarget.GetModel();
-            string tag =await targetModel.GetValueInRange(targetDec.Value, EndOfLinePreference.CRLF);
+            KeyValuePair<string, BlazorMonaco.Range> targetDec = Helpers.otherDec;
+            if (targetDec.Key == null)// || targetDec.Key==null)
+            {
+                msg = $"Click an <{AppState.tagName}> node on both files!";
+                Helpers.ShowModal(msg, Modal);
+                return;
+            }
+            string tag = await targetModel.GetValueInRange(targetDec.Value, EndOfLinePreference.CRLF);
             bool emptyTag = Helpers.IsClosedTag(tag);
             node = Helpers.getTagXMLNode(tag, AppState.tagName, emptyTag);
+            
             enmCopyAttribOp operation = enmCopyAttribOp.newAttrib;
             string oldAttribVal = "";
             foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
             {
                 if (attrb.Name == AppState.attribName)
                 {
-                    if (attrb.Value == attribVal) operation = enmCopyAttribOp.noChange;
+                    if (attrb.Value == attribVal) { operation = enmCopyAttribOp.noChange; }
                     else
                     {
                         operation = enmCopyAttribOp.newValue;
@@ -622,14 +629,15 @@
                     EndColumn=targetDec.Value.EndColumn
                 }
             };
-            lOpEd = new List<IdentifiedSingleEditOperation>() {
+            lOpEd = new List<IdentifiedSingleEditOperation>() 
+            {
                 new IdentifiedSingleEditOperation() 
                 {
                     Range = targetDec.Value,
                     Text = tag
                 }
             };
-            await _editorSource.ExecuteEdits("target", lOpEd, lSelections);
+            await _editorTarget.ExecuteEdits("target", lOpEd, lSelections);
             if (lastLineChange != 0)
             {//may need to move following tags if on the last line of current tag
                 var tagsOnLine = from d in targetDecorations where d.Value.StartLineNumber == targetDec.Value.EndLineNumber select d;
@@ -641,6 +649,7 @@
             }
         }
     }
+    
     private enum enmCopyAttribOp{ noChange, newValue, newAttrib}
     private async void CopyAttrib(bool moveToNext = false)
     {
@@ -649,6 +658,5 @@
     private async void CopyAttribAndMove()
     {
         await CopyAttribute(moveToNext: true);
-    }
     }
 }
