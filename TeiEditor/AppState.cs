@@ -65,6 +65,7 @@ namespace TeiEditor
         public List<string> Alerts { get; set; }
         public string hiddenClass { get; private set; }
         public string tagName { get; set; }
+        public string tagNameDef { get; set; }
         public string attribName { get; set; }
         public string newAttribName { get; set; }
         public int attribStartVal { get; set; }
@@ -82,6 +83,7 @@ namespace TeiEditor
             processCount = 0;
 
             tagName = "placeName";
+            tagNameDef = "placeName";
             attribName = "xml:id";
             newAttribName = "ref";
             attribStartVal = 1;

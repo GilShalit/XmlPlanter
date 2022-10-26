@@ -59,13 +59,14 @@ namespace TeiEditor
         public static async Task markWholeTag(
             string tagName,
             Position pClick, bool isLeftButton, MonacoEditor editor,
-            Dictionary<string, BlazorMonaco.Range> sourceDecorations, Boolean isFromTarget = false)
+            Dictionary<string, BlazorMonaco.Range> decorations, Boolean isFromTarget = false)
         {//!!!! if this is run in a loop make a change so GetLinesContent is run outside the loop!!!
             if (isLeftButton)
             {
-                KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
+                KeyValuePair<string, BlazorMonaco.Range> dec = (from d in decorations
                                                                 where IsPosInRange(pClick, d.Value)
                                                                 select d).FirstOrDefault();
+                //if (isFromTarget) dec = decorations.Where(d => d.Value.StartLineNumber == 85).FirstOrDefault();
 
                 if (string.IsNullOrEmpty(dec.Key))
                 {
@@ -186,23 +187,23 @@ namespace TeiEditor
         {
             List<ModelDeltaDecoration> lstDecorations = new List<ModelDeltaDecoration>();
             dicDecorations.Clear();
-            TextModel sourceModel = await editor.GetModel();
+            TextModel model = await editor.GetModel();
             await editor.ResetDeltaDecorations();
-            List<FindMatch> sourceMatches;
-            List<FindMatch> openSourceMatches;
+            List<FindMatch> matches;
+            List<FindMatch> openMatches;
 
             //v0.9.6.1: two searches are required to separate between open and closed tags.
             //Used to have one search for $"<{tag}" but then a search for <sp found also <speaker
-            sourceMatches = await sourceModel.FindMatches($"<{tag}>", false, false, false, null, true, 10000);
-            openSourceMatches = await sourceModel.FindMatches($"<{tag} ", false, false, false, null, true, 10000);
-            if (openSourceMatches.Count() > 0) foreach (FindMatch m in openSourceMatches)
-                { m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel); }//change range to hold complete tag
-            sourceMatches.AddRange(openSourceMatches);
-            sourceMatches = sourceMatches.OrderBy(m => m.Range.StartLineNumber).ToList();
+            matches = await model.FindMatches($"<{tag}>", false, false, false, null, true, 10000);
+            openMatches = await model.FindMatches($"<{tag} ", false, false, false, null, true, 10000);
+            if (openMatches.Count() > 0) foreach (FindMatch m in openMatches)
+                { m.Range = await Helpers.ExpandTagRange(m.Range, model); }//change range to hold complete tag
+            matches.AddRange(openMatches);
+            matches = matches.OrderBy(m => m.Range.StartLineNumber).ToList();
 
-            if (sourceMatches.Count > 0)
+            if (matches.Count > 0)
             {
-                foreach (FindMatch m in sourceMatches)
+                foreach (FindMatch m in matches)
                 {
                     lstDecorations.Add(new ModelDeltaDecoration
                     {
@@ -217,11 +218,11 @@ namespace TeiEditor
                     });
                 }
                 string[] decorations = await editor.DeltaDecorations(null, lstDecorations.ToArray());//decoration keys
-                for (int i = 0; i < sourceMatches.Count; i++)
+                for (int i = 0; i < matches.Count; i++)
                 {
-                    dicDecorations.Add(decorations[i], sourceMatches[i].Range);
+                    dicDecorations.Add(decorations[i], matches[i].Range);
                 }
-                await editor.RevealRangeInCenter(sourceMatches[0].Range);
+                await editor.RevealRangeInCenter(matches[0].Range);
             }
         }
 
