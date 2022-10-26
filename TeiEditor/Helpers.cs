@@ -66,7 +66,6 @@ namespace TeiEditor
                 KeyValuePair<string, BlazorMonaco.Range> dec = (from d in decorations
                                                                 where IsPosInRange(pClick, d.Value)
                                                                 select d).FirstOrDefault();
-                //if (isFromTarget) dec = decorations.Where(d => d.Value.StartLineNumber == 85).FirstOrDefault();
 
                 if (string.IsNullOrEmpty(dec.Key))
                 {

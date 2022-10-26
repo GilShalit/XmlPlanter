@@ -127,13 +127,13 @@
 
         AppState.notWorking();
 
-        //debug
-        await Helpers.LoadXM2Debug(_editorSource, "files/Dybbuk125withXMLID.xml", _client);
-        await Helpers.LoadXM2Debug(_editorTarget, "files/DIBBUK303.xml", _client);
-        AppState.OpMode = enmOpMode.CopyAttribute;
-        AppState.tagName = "sp";
-        AppState.attribName = "xml:id";
-        await markTags();
+        ////debug
+        //await Helpers.LoadXM2Debug(_editorSource, "files/Dybbuk125withXMLID.xml", _client);
+        //await Helpers.LoadXM2Debug(_editorTarget, "files/DIBBUK303.xml", _client);
+        //AppState.OpMode = enmOpMode.CopyAttribute;
+        //AppState.tagName = "sp";
+        //AppState.attribName = "xml:id";
+        //await markTags();
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)

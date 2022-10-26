@@ -10,7 +10,7 @@
         <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
     <InvariantGlobalization>true</InvariantGlobalization> If the app doesn't require localization, you may configure the app to support the invariant culture -->
     <UseSystemResourceKeys>false</UseSystemResourceKeys>
-    <AssemblyVersion>0.9.7.2</AssemblyVersion>
+    <AssemblyVersion>0.9.7.3</AssemblyVersion>
 
   </PropertyGroup>
   
@@ -28,12 +28,6 @@
 
   <ItemGroup>
     <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="wwwroot\Files\DIBBUK303.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties BuildVersion_BuildVersioningStyle="Increment.Increment.Increment.Increment" BuildVersion_StartDate="2000/1/1" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_UpdateFileVersion="True" /></VisualStudio></ProjectExtensions>
