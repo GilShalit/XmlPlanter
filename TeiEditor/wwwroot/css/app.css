@@ -97,21 +97,22 @@ a, .btn-link {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: lightblue;
-    color: white;
+    background-color: lightgrey;
+    color: darkslategrey;
     cursor: pointer;
     position: relative;
     width: 120px;
     height: 30px;
-    border-width:2px;
-    border-style:solid;
-    border-color:blue;
-    border-radius:3px;
-    font-size:14px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: darkslategrey;
+    border-radius: 3px;
+    font-size: 14px;
 }
 
     .file-input-zone:hover {
-        background-color: blue;
+        background-color: darkslategrey;
+        color:white;
     }
 
     .file-input-zone input[type=file] {
@@ -135,19 +136,20 @@ a, .btn-link {
 }
 
 .myButton {
-    background-color: lightblue;
-    color: white;
+    background-color: lightgrey;
+    color: darkslategrey;
     cursor: pointer;
     height: 30px;
     border-width: 2px;
     border-style: solid;
-    border-color: blue;
+    border-color: darkslategrey;
     border-radius: 3px;
 }
 
     .myButton:hover {
-        background-color: blue;
-        border-color: blue;
+        background-color: darkslategrey;
+        border-color: darkslategrey;
+        color:white;
     }
 
 .nav-link-selected {

@@ -21,8 +21,8 @@
         <div class="col-3 offset-1" style=" font-size:2rem;">
             <a href="https://www.dh-dev.com" target="_blank"><img src="images\logo_white_background.jpg" style="max-width:100px;height:auto" /></a>
         </div>
-        <div class="col " style="font-size:2rem">
-            Built by: <a href="https://www.dh-dev.com" target="_blank">DHDev (DH-Dev.com)</a>
+        <div class="col " style="font-size:2rem;color:darkslategrey">
+            Built by: <a href="https://www.dh-dev.com" target="_blank" style="font-size:2rem;color:darkslategrey">DHDev (DH-Dev.com)</a>
         </div>
     </div>
     <div class="row w-100 align-items-center" style="padding-top:20px;padding-bottom:20px">
@@ -35,7 +35,7 @@
     </div>
     <div class="row">
         <div class="col">
-            The XML Planter is a work environment which serves to complement and facilitate XML-TEI editing without having to code. Its two modes are Xml2Xml - a tool that assists the creation of parallel editions, and Xml2Tsv2Xml: a lookup tool which enables replacing or adding attributes to TEI elements.
+            The XML Planter is a work environment which serves to complement and facilitate XML-TEI editing without having to code. Its three modules are <b>Xml2Xml</b> - a tool that assists the creation of parallel editions, <b>Xml2Tsv2Xml</b> - a lookup tool which enables replacing or adding attributes to TEI elements and <b>xml:id</b> - a tool which enables adding new attributes with unique, running values.
         </div>
     </div>
     <div class="row" style="padding-top:20px;font-size:1.5rem;">
@@ -45,7 +45,27 @@
     </div>
     <div class="row">
         <div class="col">
-            In the creation of parallel editions, whether they are a source and its translation, different witnesses or any other pairs of versions that share common elements, the annotation work requires going back and forth between the source - an already annotated version and a target edition which one wishes to align to the source.  Copying XML elements and their attributes can be cumbersome, and even more so when one of the versions is written Right-to-Left.  The Xml2Xml planter enables a smooth workflow of transferring information between editions:
+            In the creation of parallel editions, whether they are a source and its translation(s), different witness acounts or any other sets of versions that share common elements, the annotation work requires going back and forth between the source - an already annotated version and a target edition which one wishes to align to the source.  Copying XML elements and their attributes can be cumbersome, and even more so when one of the versions is written in a Right-to-Left script.  The Xml2Xml module enables a smooth workflow of transferring information between editions, using one of the following three tools:
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <ul>
+                <li>
+                    Copy tag with attributes.
+                </li>
+                <li>
+                    Copy tag with new attribute.
+                </li>
+                <li>
+                    Copy attribute from tag on source to tag on target.
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            The workflow will generally be:
         </div>
     </div>
     <div class="row">
@@ -58,7 +78,7 @@
                     Configure: select the element tags which are to be copied and whether the attributes from the source, or new random attributes should be added to the copied element in the target;
                 </li>
                 <li>
-                    in the sources actions button, choose “mark”. This will highlight all source elements to be copied;
+                    in the sources Actions menu, choose “mark”. This will highlight all source elements to be copied;
                 </li>
                 <li>
                     In the source text, click the highlighted tag that you wish to copy;
@@ -69,11 +89,23 @@
                 <li>
                     In the same right click menu (or using the shortcut shift+d), you can also select the option of selecting and highlighting the next elements in the source (shift+d, shift+m);
                 </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            Two more tools are provided for assistanse during alignment:
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <ul>
                 <li>
-                    Clicking “save” in either source or target panes will open the option of renaming your file and will download it;
+                    Align clicked tag on both windows according to attribute value.
                 </li>
                 <li>
-                    At any stage, you can validate the source and/or target files by clicking ‘validate’ through the ‘action’ button.
+                    Highlight tags that don't have a corresponding value.
                 </li>
             </ul>
         </div>
@@ -85,7 +117,7 @@
     </div>
     <div class="row">
         <div class="col">
-            This tool enables automatically feeding, or replacing, values to attributes in an XML-TEI edition in several simple steps:
+            This module enables automatically feeding, or replacing, values to attributes in an XML-TEI edition with the following tools:
         </div>
     </div>
     <div class="row">
@@ -98,13 +130,13 @@
                     Configure by choosing one of the following modes:
                     <ol type="a">
                         <li>
-                            add a new attribute with values based on the value of a selected attribute
+                            Add a new attribute with values based on the value of a selected attribute
                         </li>
                         <li>
-                            replace the value of a selected attribute in a selected element with a new value;
+                            Replace the value of a selected attribute in a selected element with a new value;
                         </li>
                         <li>
-                            add a new attribute with values based on the content of a selected element
+                            Add a new attribute with values based on the content of a selected element
                         </li>
                     </ol>
                 </li>
@@ -120,11 +152,54 @@
                 <li>
                     By selecting 'lookup' from 'actions', the values will be added or replaced, the elements which were changed will be highlighted in green, those that remain unchanged will be highlighted in Yellow.
                 </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row" style=";font-size:1.5rem;">
+        <div class="col">
+            xml:id
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            This module is used to add a unique attribute (xml:id by default) to a selected tag.
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            The workflow will generally be:
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <ul>
                 <li>
-                    Clicking 'save' in either source or target panes will open the option of renaming your file and will download it;
+                    select the source version;
                 </li>
                 <li>
-                    At any stage, you can validate the source and/or target files by clicking ‘validate’ through the ‘actions’ button.
+                    Configure: select the element tags which are to be modified and the attribute which will be added with unique values.  Select the starting value;
+                </li>
+                <li>
+                    Select Add Attribs from the Actions menu;
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="row" style="font-size:1.5rem;">
+        <div class="col">
+            General
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <ul>
+                <li>
+                    Clicking 'save' (through the Actions menu) in either code panes will give the option of renaming your file and will download it;
+                </li>
+                <li>
+                    At any stage, you can validate the source and/or target files by clicking ‘validate’ through the Actions menu.
                 </li>
             </ul>
         </div>
@@ -149,7 +224,7 @@
             </ul>
         </div>
     </div>
-    <div class="row" style="padding-top:10px">
+    <div class="row" style="padding-top:10px;padding-bottom:10px">
         <div class="col text-center">
             <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">
                 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" />
@@ -157,6 +232,7 @@
         </div>
     </div>
 </div>
+<br/>
 @code {
     string version;
     protected override void OnInitialized()

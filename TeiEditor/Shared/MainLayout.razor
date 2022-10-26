@@ -4,24 +4,33 @@
 
 <div class="page">
     @*<div class="sidebar">
-            <NavMenu />
-        </div>*@
+    <NavMenu />
+    </div>*@
 
     <div class="main">
-        <div class="top-row px-4" id="navTop">
+        <div class="top-row px-4" id="navTop" >
 
             <img id="gifWorking" src="images/working.gif" class="workingGif @AppState.hiddenClass" />
-            <NavLink id="mainNav" class="nav-link nav-link-selected" href="" Match="NavLinkMatch.All">
+            <NavLink id="mainNav" class="nav-link nav-link-selected" href="" Match="NavLinkMatch.All" style="color:darkslategrey!important">
                 Xml2Xml
             </NavLink>
-            <NavLink id="X2T2XNav" class="nav-link " href="X2T2X">
+            <NavLink id="X2T2XNav" class="nav-link " href="X2T2X" style="color:darkslategrey!important">
                 Xml2Tsv2Xml
             </NavLink>
-            <NavLink id="XMLIDNav" class="nav-link " href="XMLIDs">
+            <NavLink id="XMLIDNav" class="nav-link " href="XMLIDs" style="color:darkslategrey!important">
                 xml:id
             </NavLink>
             <button class="myButton" style="margin-left:20px" @onclick="getConfig">Configuration</button>
-            <a href="About" class="ml-md-auto">About</a>
+            <div class="ml-md-auto" style="position:relative;">
+                <a href="About" style="position:relative;">
+                    <div style="box-sizing:border-box">
+                        <img src="images/logo_white_background_cut.jpg" style="width:44px; height: 32px" />
+                    </div>
+                    <div style="padding-bottom:15px!important;color:darkslategrey!important">
+                        About
+                    </div>
+                </a>
+            </div>
         </div>
 
         <div class="content px-4">
@@ -37,7 +46,7 @@
     {
         ModalOptions options = new ModalOptions() { HideCloseButton = true, Animation = ModalAnimation.FadeInOut(0.5) };
 
-        var messageForm = Modal.Show<MessageForm>(title: "Configuration",options: options);
+        var messageForm = Modal.Show<MessageForm>(title: "Configuration", options: options);
         var result = await messageForm.Result;
 
         //if (!result.Cancelled)
