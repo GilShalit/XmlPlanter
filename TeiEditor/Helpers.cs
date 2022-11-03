@@ -30,7 +30,7 @@ namespace TeiEditor
     {
         Done = 0,
         Current = 1,
-        Warning=2
+        Warning = 2
     }
 
     public static class Helpers
@@ -39,8 +39,8 @@ namespace TeiEditor
         static public XmlSchemaSet schemaSet = new XmlSchemaSet();
         static public string currentRangeId;
         static public string otherRangeId;
-        static public KeyValuePair<string, BlazorMonaco.Range> currentDec;
-        static public KeyValuePair<string, BlazorMonaco.Range> otherDec;
+        static public KeyValuePair<string, BlazorMonaco.Range> currentDec { get; set; }
+        static public KeyValuePair<string, BlazorMonaco.Range> otherDec { get; set; }
 
         public static bool IsPosInRange(Position position, BlazorMonaco.Range range)
         {
@@ -59,11 +59,11 @@ namespace TeiEditor
         public static async Task markWholeTag(
             string tagName,
             Position pClick, bool isLeftButton, MonacoEditor editor,
-            Dictionary<string, BlazorMonaco.Range> sourceDecorations,Boolean isFromTarget=false)
+            Dictionary<string, BlazorMonaco.Range> decorations, Boolean isFromTarget = false)
         {//!!!! if this is run in a loop make a change so GetLinesContent is run outside the loop!!!
             if (isLeftButton)
             {
-                KeyValuePair<string, BlazorMonaco.Range> dec = (from d in sourceDecorations
+                KeyValuePair<string, BlazorMonaco.Range> dec = (from d in decorations
                                                                 where IsPosInRange(pClick, d.Value)
                                                                 select d).FirstOrDefault();
 
@@ -90,7 +90,7 @@ namespace TeiEditor
 
                     Position pEnd;
                     if (IsClosedTag(tag)) pEnd = new Position() { Column = dec.Value.EndColumn, LineNumber = dec.Value.EndLineNumber };
-                    else pEnd =  getEndOfTag(tagName, dec.Value, modelLines);
+                    else pEnd = getEndOfTag(tagName, dec.Value, modelLines);
 
                     BlazorMonaco.Range range = new BlazorMonaco.Range()
                     {
@@ -173,11 +173,7 @@ namespace TeiEditor
             TextModel model = await editor.GetModel();
             foreach (KeyValuePair<string, BlazorMonaco.Range> dec in dicDecorations)
             {
-                string tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
-                bool closedTag = Helpers.IsClosedTag(tag);
-                XmlDocument node = new XmlDocument();
-                if (closedTag) node.LoadXml(tag);
-                else node.LoadXml($"{tag}</{tagName}>");
+                XmlDocument node = await getTagXMLNode(dec.Value, model, tagName, false);
                 foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                 {
                     if (attrb.Name == attribName) TagAttribs.Add(dec.Key, attrb.Value);
@@ -190,23 +186,23 @@ namespace TeiEditor
         {
             List<ModelDeltaDecoration> lstDecorations = new List<ModelDeltaDecoration>();
             dicDecorations.Clear();
-            TextModel sourceModel = await editor.GetModel();
+            TextModel model = await editor.GetModel();
             await editor.ResetDeltaDecorations();
-            List<FindMatch> sourceMatches;
-            List<FindMatch> openSourceMatches;
+            List<FindMatch> matches;
+            List<FindMatch> openMatches;
 
             //v0.9.6.1: two searches are required to separate between open and closed tags.
             //Used to have one search for $"<{tag}" but then a search for <sp found also <speaker
-            sourceMatches = await sourceModel.FindMatches($"<{tag}>", false, false, false, null, true, 10000);
-            openSourceMatches = await sourceModel.FindMatches($"<{tag} ", false, false, false, null, true, 10000);
-            if (openSourceMatches.Count() > 0) foreach (FindMatch m in openSourceMatches)
-                { m.Range = await Helpers.ExpandTagRange(m.Range, sourceModel); }//change range to hold complete tag
-            sourceMatches.AddRange(openSourceMatches);
-            sourceMatches=sourceMatches.OrderBy(m=>m.Range.StartLineNumber).ToList();
+            matches = await model.FindMatches($"<{tag}>", false, false, false, null, true, 10000);
+            openMatches = await model.FindMatches($"<{tag} ", false, false, false, null, true, 10000);
+            if (openMatches.Count() > 0) foreach (FindMatch m in openMatches)
+                { m.Range = await Helpers.ExpandTagRange(m.Range, model); }//change range to hold complete tag
+            matches.AddRange(openMatches);
+            matches = matches.OrderBy(m => m.Range.StartLineNumber).ToList();
 
-            if (sourceMatches.Count > 0)
+            if (matches.Count > 0)
             {
-                foreach (FindMatch m in sourceMatches)
+                foreach (FindMatch m in matches)
                 {
                     lstDecorations.Add(new ModelDeltaDecoration
                     {
@@ -221,14 +217,34 @@ namespace TeiEditor
                     });
                 }
                 string[] decorations = await editor.DeltaDecorations(null, lstDecorations.ToArray());//decoration keys
-                for (int i = 0; i < sourceMatches.Count; i++)
+                for (int i = 0; i < matches.Count; i++)
                 {
-                    dicDecorations.Add(decorations[i], sourceMatches[i].Range);
+                    dicDecorations.Add(decorations[i], matches[i].Range);
                 }
-                await editor.RevealRangeInCenter(sourceMatches[0].Range);
+                await editor.RevealRangeInCenter(matches[0].Range);
             }
         }
 
+        public static async Task<XmlDocument> getTagXMLNode(
+            BlazorMonaco.Range range,
+            TextModel model,
+            string tagName,
+            bool removeStructure)
+        {
+            string tag = await model.GetValueInRange(range, EndOfLinePreference.CRLF);
+            if (removeStructure) tag = tag.Replace("\t", "").Replace("\r", "").Replace("\n", "");
+            bool emptyTag = Helpers.IsClosedTag(tag);
+
+            return getTagXMLNode(tag, tagName, emptyTag);
+        }
+        public static XmlDocument getTagXMLNode(string tag, string tagName, bool emptyTag)
+        {
+            XmlDocument node = new XmlDocument();
+            if (emptyTag) node.LoadXml(tag);
+            else node.LoadXml($"{tag}</{tagName}>");
+
+            return node;
+        }
         public static async Task RemoveDecoration(MonacoEditor editor, string id)
         {
             string[] targetID = new string[] { id };
@@ -236,7 +252,7 @@ namespace TeiEditor
             await editor.DeltaDecorations(targetID, emptyDec.ToArray());
         }
 
-        public static async Task<string> ColorRange(MonacoEditor editor, BlazorMonaco.Range range, string id = "", 
+        public static async Task<string> ColorRange(MonacoEditor editor, BlazorMonaco.Range range, string id = "",
             enmStatusColor statusColor = enmStatusColor.Done)
         {
             string contentClass = "";
@@ -347,7 +363,13 @@ namespace TeiEditor
             }
         }
 
-
+        public static async Task LoadXM2Debug(MonacoEditor editor, string path, HttpClient _client)
+        {
+            byte[] bytesOfXML = await _client.GetByteArrayAsync(path);
+            string stringOfXML = Encoding.UTF8.GetString(bytesOfXML);
+            TextModel model = await MonacoEditorBase.CreateModel(stringOfXML, "xml");
+            await editor.SetModel(model);
+        }
         public static async Task LoadXMLfromFile(MonacoEditor editor, IBrowserFile file)
         {
             byte[] bytesOfXML = new byte[file.Size];
@@ -378,7 +400,7 @@ namespace TeiEditor
 
         public static void ShowModal(string msg, IModalService Modal)
         {
-            ModalOptions options = new ModalOptions() { HideCloseButton = true};
+            ModalOptions options = new ModalOptions() { HideCloseButton = true };
             Modal.Show<Confirm>(msg, options);
         }
 

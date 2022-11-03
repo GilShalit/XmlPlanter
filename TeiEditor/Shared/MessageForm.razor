@@ -10,6 +10,9 @@
             <option value=@Extensions.GetEnumDisplayName(enmOpMode.CopyTagWithNewAttribs)>
                 @Extensions.GetDescription(enmOpMode.CopyTagWithNewAttribs)
             </option>
+            <option value=@Extensions.GetEnumDisplayName(enmOpMode.CopyAttribute)>
+                @Extensions.GetDescription(enmOpMode.CopyAttribute)
+            </option>
             <option value=@Extensions.GetEnumDisplayName(enmOpMode.AlignSelectedTag)>
                 @Extensions.GetDescription(enmOpMode.AlignSelectedTag)
             </option>
@@ -87,6 +90,7 @@
                 case "None":
                     //AppState.OpMode = enmOpMode.None;
                     TagHidden = hidden;
+                    Tag= AppState.tagNameDef;
                     AttributeHidden = hidden;
                     NewAttributeHidden = hidden;
                     attribStartHidden = hidden;
@@ -94,6 +98,7 @@
                 case "CopyTagWithAttribs":
                     //AppState.OpMode = enmOpMode.CopyTagWithAttribs;
                     TagHidden = "";
+                    Tag= AppState.tagNameDef;
                     AttributeHidden = hidden;
                     NewAttributeHidden = hidden;
                     attribStartHidden = hidden;
@@ -101,6 +106,7 @@
                 case "CopyTagWithNewAttribs":
                     //AppState.OpMode = enmOpMode.CopyTagWithNewAttribs;
                     TagHidden = "";
+                    Tag= AppState.tagNameDef;
                     AttributeHidden = "";
                     NewAttributeHidden = hidden;
                     attribStartHidden = "";
@@ -108,6 +114,7 @@
                 case "AlignSelectedTag":
                     //AppState.OpMode = enmOpMode.AlignSelectedTag;
                     TagHidden = "";
+                    Tag= AppState.tagNameDef;
                     AttributeHidden = "";
                     NewAttributeHidden = hidden;
                     attribStartHidden = hidden;
@@ -115,15 +122,26 @@
                 case "FindNoCorresponding":
                     //AppState.OpMode = enmOpMode.FindNoCorresponding;
                     TagHidden = "";
+                    Tag= AppState.tagNameDef;
                     AttributeHidden = "";
                     NewAttributeHidden = "";
                     newAttribute = "ana";
                     attribStartHidden = hidden;
                     break;
+                case "CopyAttribute":
+                    //AppState.OpMode = enmOpMode.CopyAttribute;
+                    TagHidden = "";
+                    AttributeHidden = "";
+                    NewAttributeHidden = hidden;
+                    attribStartHidden = hidden;
+                    Tag = "sp";
+                    Attribute = "xml:id";
+                    break;
 
                 case "NewAttribLookup":
                     //AppState.OpMode = enmOpMode.NewAttribLookup;
                     TagHidden = "";
+                    Tag= AppState.tagNameDef;
                     AttributeHidden = "";
                     NewAttributeHidden = "";
                     newAttribute = "ref";
@@ -132,6 +150,7 @@
                 case "ChangeAttribLookup":
                     //AppState.OpMode = enmOpMode.ChangeAttribLookup;
                     TagHidden = "";
+                    Tag= AppState.tagNameDef;
                     AttributeHidden = "";
                     NewAttributeHidden = hidden;
                     attribStartHidden = hidden;
@@ -139,6 +158,7 @@
                 case "AttribLookupContents":
                     //AppState.OpMode = enmOpMode.AttribLookupContents;
                     TagHidden = "";
+                    Tag= AppState.tagNameDef;
                     AttributeHidden = hidden;
                     NewAttributeHidden = "";
                     newAttribute = "ref";
@@ -149,6 +169,7 @@
                 case "AddUniqueAttribVal":
                     //AppState.OpMode = enmOpMode.AddUniqueAttribVal;
                     TagHidden = "";
+                    Tag= AppState.tagNameDef;
                     AttributeHidden = "";
                     NewAttributeHidden = hidden;
                     attribStartHidden = "";

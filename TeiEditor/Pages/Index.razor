@@ -81,7 +81,6 @@
     [CascadingParameter] public IModalService Modal { get; set; }
     string[] actionList = new string[3] { "mark", "validate", "save" };
 
-
     private async void OnTargetCommandSelected(string action)
     {
         switch (action)
@@ -104,11 +103,11 @@
     private StandaloneEditorConstructionOptions EditorConstructionOptions(MonacoEditor editor)
     {
         return new StandaloneEditorConstructionOptions
-        {
-            GlyphMargin = true,
-            AutomaticLayout = true,
-            WordWrap = "on"
-        };
+            {
+                GlyphMargin = true,
+                AutomaticLayout = true,
+                WordWrap = "on"
+            };
     }
 
     protected async override void OnInitialized()
@@ -127,6 +126,14 @@
         await Helpers.ensureLoadedSchemas(_client);
 
         AppState.notWorking();
+
+        ////debug
+        //await Helpers.LoadXM2Debug(_editorSource, "files/Dybbuk125withXMLID.xml", _client);
+        //await Helpers.LoadXM2Debug(_editorTarget, "files/DIBBUK303.xml", _client);
+        //AppState.OpMode = enmOpMode.CopyAttribute;
+        //AppState.tagName = "sp";
+        //AppState.attribName = "xml:id";
+        //await markTags();
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
@@ -196,14 +203,19 @@
     private async void onMouseDownTarget(EditorMouseEvent eventArg)
     {
 
-        if (AppState.OpMode == enmOpMode.AlignSelectedTag || AppState.OpMode == enmOpMode.FindNoCorresponding)
+        if (AppState.OpMode == enmOpMode.AlignSelectedTag ||
+            AppState.OpMode == enmOpMode.FindNoCorresponding ||
+            AppState.OpMode == enmOpMode.CopyAttribute
+        )
         {
             await Helpers.markWholeTag(AppState.tagName,
             eventArg.Target.Position, eventArg.Event.LeftButton,
             _editorTarget, targetDecorations, true);
-
-            Helpers.currentRangeId = await align(Helpers.otherDec.Key, targetLookup, sourceLookup,
-                _editorSource, sourceDecorations, Helpers.currentRangeId);
+            if (AppState.OpMode != enmOpMode.CopyAttribute)
+            {
+                Helpers.currentRangeId = await align(Helpers.otherDec.Key, targetLookup, sourceLookup,
+                    _editorSource, sourceDecorations, Helpers.currentRangeId);
+            }
         }
     }
 
@@ -246,6 +258,13 @@
         await _editorTarget.AddAction("CopyTagWNewAttribMoveNext", "Copy Tag with New Attribute & Move to Next",
             new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_M },
             null, null, "navigation", 1.5, (editor, keyCodes) => CopyTagWNewAndMove());
+
+        await _editorTarget.AddAction("CopyAttrib", "Copy Attribute",
+            new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_B },
+            null, null, "navigation", 1.5, (editor, keyCodes) => CopyAttrib());
+        await _editorTarget.AddAction("CopyAttribMoveNext", "Copy Attribute & Move to Next",
+            new int[] { (int)KeyMode.Shift | (int)KeyCode.KEY_A },
+            null, null, "navigation", 1.5, (editor, keyCodes) => CopyAttribAndMove());
     }
 
     private async Task ValidateXML(MonacoEditor editor)
@@ -279,7 +298,7 @@
 
         await Helpers.markTags(_editorSource, AppState.tagName, sourceDecorations);
 
-        if (AppState.OpMode == enmOpMode.AlignSelectedTag || AppState.OpMode == enmOpMode.FindNoCorresponding)
+        if (AppState.OpMode == enmOpMode.AlignSelectedTag || AppState.OpMode == enmOpMode.FindNoCorresponding || AppState.OpMode == enmOpMode.CopyAttribute)
         {
             await Helpers.markTags(_editorTarget, AppState.tagName, targetDecorations);
             sourceLookup = await Helpers.GetDecorationTagAttribs(AppState.tagName, AppState.attribName, _editorSource, sourceDecorations);
@@ -315,9 +334,7 @@
                 string tag = await model.GetValueInRange(decRange, EndOfLinePreference.CRLF);
                 bool closedTag = Helpers.IsClosedTag(tag);
 
-                XmlDocument node = new XmlDocument();
-                if (closedTag) node.LoadXml(tag);
-                else node.LoadXml($"{tag}</{AppState.tagName}>");
+                XmlDocument node = Helpers.getTagXMLNode(tag, AppState.tagName, closedTag);
                 foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                 {
                     if (attrb.Name == AppState.newAttribName) doAdd = false; //attrib exists and will not be changed
@@ -377,6 +394,35 @@
         }
     }
 
+    private async Task gotoNextDec(
+        KeyValuePair<string, BlazorMonaco.Range> currentDec,
+        Dictionary<string, BlazorMonaco.Range> decorations,
+        MonacoEditor editor, Boolean isFromTarget = false
+            )
+    {
+        KeyValuePair<string, BlazorMonaco.Range> nextDec = new KeyValuePair<string, BlazorMonaco.Range>();
+        int nextI = 0;
+
+        for (int i = 0; i < decorations.Keys.Count; i++)
+        {
+            if (decorations.ElementAt(i).Key == currentDec.Key)
+            {
+                nextI = i + 1;
+                break;
+            }
+        }
+        if (nextI < decorations.Keys.Count)
+        {
+            nextDec = decorations.ElementAt(nextI);
+        }
+        if (!string.IsNullOrEmpty(nextDec.Key))
+        {
+            Position nextPos = new Position() { LineNumber = nextDec.Value.StartLineNumber, Column = nextDec.Value.StartColumn };
+            await Helpers.markWholeTag(AppState.tagName, nextPos, true, editor, decorations, isFromTarget);
+            await editor.RevealRangeInCenter(nextDec.Value);
+        }
+    }
+
     private async Task CopyTag(bool newTagVal = false, bool moveToNext = false)
     {
         string msg = "";
@@ -384,6 +430,7 @@
         {
             case enmOpMode.AlignSelectedTag:
             case enmOpMode.FindNoCorresponding:
+            case enmOpMode.CopyAttribute:
             case enmOpMode.None:
                 msg = "Please select mode in configuration";
                 break;
@@ -400,22 +447,18 @@
             return;
         }
 
-        KeyValuePair<string, BlazorMonaco.Range>
-    dec = Helpers.currentDec;
+        KeyValuePair<string, BlazorMonaco.Range> dec = Helpers.currentDec;
         if (!string.IsNullOrEmpty(dec.Key))
         {
-            List<IdentifiedSingleEditOperation>
-                lOpEd;
+            List<IdentifiedSingleEditOperation> lOpEd;
             BlazorMonaco.Range decRange = dec.Value;
             TextModel sourceModel = await _editorSource.GetModel();
             string tag = await sourceModel.GetValueInRange(decRange, EndOfLinePreference.CRLF);
             tag = tag.Replace("\t", "").Replace("\r", "").Replace("\n", "");
             if (newTagVal)
             {
-                XmlDocument node = new XmlDocument();
                 bool emptyTag = Helpers.IsClosedTag(tag);
-                if (emptyTag) node.LoadXml(tag);
-                else node.LoadXml($"{tag}</{AppState.tagName}>");
+                XmlDocument node = Helpers.getTagXMLNode(tag, AppState.tagName, emptyTag);
                 foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
                 {
                     if (attrb.Name == AppState.attribName) attrb.Value = (AppState.attribStartVal++).ToString();
@@ -428,9 +471,7 @@
             Selection targetSel = await _editorTarget.GetSelection();
             BlazorMonaco.Range targetStartRange = new BlazorMonaco.Range(targetSel.StartLineNumber, targetSel.StartColumn, targetSel.StartLineNumber, targetSel.StartColumn);
             BlazorMonaco.Range targetEndRange = new BlazorMonaco.Range(targetSel.EndLineNumber, targetSel.EndColumn, targetSel.EndLineNumber, targetSel.EndColumn);
-            List<Selection>
-                lSelections = new List<Selection>
-                    () { targetSel };
+            List<Selection> lSelections = new List<Selection>() { targetSel };
 
 
             ///insert tag on target
@@ -476,42 +517,9 @@
 
             if (moveToNext)
             {
-                //select next marked tag
-                KeyValuePair<string, BlazorMonaco.Range>
-                    nextDec = getNextDec(dec);
-                if (!string.IsNullOrEmpty(nextDec.Key))
-                {
-                    Position nextPos = new Position() { LineNumber = nextDec.Value.StartLineNumber, Column = nextDec.Value.StartColumn };
-                    await Helpers.markWholeTag(AppState.tagName, nextPos, true, _editorSource, sourceDecorations);
-                    await _editorSource.RevealRangeInCenter(nextDec.Value);
-                }
+                await gotoNextDec(dec, sourceDecorations, _editorSource);
             }
         }
-    }
-
-    private KeyValuePair<string, BlazorMonaco.Range>
-        getNextDec(KeyValuePair<string, BlazorMonaco.Range>
-            currentDec)
-    {
-        KeyValuePair<string, BlazorMonaco.Range>
-            nextDec = new KeyValuePair<string, BlazorMonaco.Range>
-                ();
-        int nextI = 0;
-
-        for (int i = 0; i < sourceDecorations.Keys.Count; i++)
-        {
-            if (sourceDecorations.ElementAt(i).Key == currentDec.Key)
-            {
-                nextI = i + 1;
-                break;
-            }
-        }
-        if (nextI < sourceDecorations.Keys.Count)
-        {
-            nextDec = sourceDecorations.ElementAt(nextI);
-        }
-
-        return nextDec;
     }
 
     private async void CopyTagAndMove()
@@ -527,5 +535,129 @@
     private async void CopyTagWNewAndMove()
     {
         await CopyTag(newTagVal: true, moveToNext: true);
+    }
+
+    private async Task CopyAttribute(bool moveToNext = false)
+    {
+        string msg = "";
+        switch (AppState.OpMode)
+        {
+            case enmOpMode.AlignSelectedTag:
+            case enmOpMode.FindNoCorresponding:
+            case enmOpMode.CopyTagWithAttribs:
+            case enmOpMode.None:
+            case enmOpMode.CopyTagWithNewAttribs:
+                msg = "Please select mode in configuration";
+                Helpers.ShowModal(msg, Modal);
+                return;
+        }
+
+        string attribVal = "";
+        KeyValuePair<string, BlazorMonaco.Range> sourceDec = Helpers.currentDec;
+        KeyValuePair<string, BlazorMonaco.Range> targetDec = Helpers.otherDec;
+        if (sourceDec.Key == null || targetDec.Key == null)
+        {
+            msg = $"Click an <{AppState.tagName}> node on both files!";
+            Helpers.ShowModal(msg, Modal);
+            return;
+        }
+        if (!string.IsNullOrEmpty(sourceDec.Key))
+        {
+            List<IdentifiedSingleEditOperation> lOpEd;
+            TextModel sourceModel = await _editorSource.GetModel();
+
+            //find source attribute value
+            XmlDocument node = await Helpers.getTagXMLNode(sourceDec.Value, sourceModel, AppState.tagName, true);
+            foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
+            {
+                if (attrb.Name == AppState.attribName) attribVal = attrb.Value;
+            }
+
+            //adding or updating attribute on target
+            TextModel targetModel = await _editorTarget.GetModel();
+            string tag = await targetModel.GetValueInRange(targetDec.Value, EndOfLinePreference.CRLF);
+            bool emptyTag = Helpers.IsClosedTag(tag);
+            node = Helpers.getTagXMLNode(tag, AppState.tagName, emptyTag);
+
+            enmCopyAttribOp operation = enmCopyAttribOp.newAttrib;
+            string oldAttribVal = "";
+            foreach (XmlAttribute attrb in node.DocumentElement.Attributes)
+            {
+                if (attrb.Name == AppState.attribName)
+                {
+                    if (attrb.Value == attribVal) { operation = enmCopyAttribOp.noChange; }
+                    else
+                    {
+                        operation = enmCopyAttribOp.newValue;
+                        oldAttribVal = attrb.Value;
+                    }
+                }
+            }
+            if (operation == enmCopyAttribOp.noChange) return;
+
+            string sNewAttrib = $" {AppState.attribName}=\"{attribVal}\"";
+            string sOldAttrib = "";
+            int lastLineChange = 0;
+            switch (operation)
+            {
+                case enmCopyAttribOp.newAttrib:
+                    lastLineChange = sNewAttrib.Length; //change in tag length that may affect next tag if on the same line
+                    if (emptyTag) tag = tag.Replace("/>", $"{sNewAttrib}/>");
+                    else tag = tag.Replace(">", $"{sNewAttrib}>");
+                    break;
+                case enmCopyAttribOp.newValue:
+                    sOldAttrib = $" {AppState.attribName}=\"{oldAttribVal}\"";
+                    //ignored X2T2X (line 168) checking if there is a line-break after original attribute
+                    lastLineChange = sNewAttrib.Length - sOldAttrib.Length;
+                    tag = tag.Replace(sOldAttrib, sNewAttrib);
+                    break;
+            }
+            List<Selection> lSelections = new List<Selection>()
+            {
+                new Selection()
+                {
+                    StartLineNumber=targetDec.Value.EndLineNumber,
+                    EndLineNumber=targetDec.Value.EndLineNumber,
+                    StartColumn=targetDec.Value.EndColumn,
+                    EndColumn=targetDec.Value.EndColumn
+                }
+            };
+            lOpEd = new List<IdentifiedSingleEditOperation>()
+            {
+                new IdentifiedSingleEditOperation()
+                {
+                    Range = targetDec.Value,
+                    Text = tag
+                }
+            };
+            await _editorTarget.ExecuteEdits("target", lOpEd, lSelections);
+            if (lastLineChange != 0)
+            {
+                //may need to move following tags if on the last line of current tag
+                //this is a very incomplete search I think
+                var tagsOnLine = targetDecorations.Where(d => d.Value.StartLineNumber == targetDec.Value.EndLineNumber && d.Key != targetDec.Key);
+                foreach (KeyValuePair<string, BlazorMonaco.Range> d in tagsOnLine)
+                {
+                    d.Value.StartColumn = d.Value.StartColumn + lastLineChange;
+                    if (d.Value.EndLineNumber == targetDec.Value.EndLineNumber) d.Value.EndColumn = d.Value.EndColumn + lastLineChange;
+                }
+                targetDecorations[targetDec.Key].EndColumn = targetDecorations[targetDec.Key].EndColumn + lastLineChange;
+            }
+            if (moveToNext)
+            {
+                await gotoNextDec(sourceDec, sourceDecorations, _editorSource);
+                await gotoNextDec(targetDec, targetDecorations, _editorTarget, true);
+            }
+        }
+    }
+
+    private enum enmCopyAttribOp { noChange, newValue, newAttrib }
+    private async void CopyAttrib(bool moveToNext = false)
+    {
+        await CopyAttribute();
+    }
+    private async void CopyAttribAndMove()
+    {
+        await CopyAttribute(moveToNext: true);
     }
 }

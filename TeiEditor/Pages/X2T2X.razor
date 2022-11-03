@@ -131,14 +131,8 @@
                 isAmbiguous = false;
                 lastLineChange = 0;
                 tag = await model.GetValueInRange(dec.Value, EndOfLinePreference.CRLF);
-                if (tag.Contains("temp0757"))
-                {
-                    Console.WriteLine(tag);
-                }
-
-
                 bool closedTag = Helpers.IsClosedTag(tag);
-                XmlDocument node = new XmlDocument();
+                XmlDocument node = new XmlDocument(); //not using helper here because of logic
                 if (AppState.OpMode != enmOpMode.AttribLookupContents)
                 {// for AttribLookupContents will load in switch below
                     if (closedTag) node.LoadXml(tag);
@@ -235,9 +229,11 @@
                         }
                     };
                     List<IdentifiedSingleEditOperation> lOpEd = new List<IdentifiedSingleEditOperation>() {
-                    new IdentifiedSingleEditOperation() {
+                    new IdentifiedSingleEditOperation() 
+                    {
                         Range = dec.Value,
-                        Text = tag}
+                        Text = tag
+                    }
                 };
                     await _editorSource.ExecuteEdits("source", lOpEd, lSelections);
                     //modelLines = await model.GetLinesContent();
